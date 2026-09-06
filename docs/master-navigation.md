@@ -52,6 +52,10 @@ mindmap
       docs/product/platform-product-guide.md
       docs/product/platform-product-guide.zh-CN.md
       docs/product/platform-product-guide.en.md
+    Frontend
+      web/admin (M1 console: React18+Vite+TS, design tokens)
+    CDC
+      infra/cdc (Debezium Server: TiDB binlog -> Pulsar)
     Code Entry Points
       src/enterprise_ekb/app.py
       services/java-kgraph/KGraphApplication.java

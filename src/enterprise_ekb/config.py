@@ -58,6 +58,8 @@ class AppConfig:
     jwt_hs256_secret: str
     jwt_expected_audience: str
     log_format: str
+    relay_background_enabled: bool
+    relay_interval_seconds: float
 
 
 def _parse_tenant_region_rate_limits(raw: str) -> dict[str, int]:
@@ -156,4 +158,6 @@ def load_config() -> AppConfig:
         jwt_hs256_secret=os.getenv("EKB_JWT_HS256_SECRET", ""),
         jwt_expected_audience=os.getenv("EKB_JWT_EXPECTED_AUDIENCE", ""),
         log_format=os.getenv("EKB_LOG_FORMAT", "text"),
+        relay_background_enabled=os.getenv("EKB_RELAY_BACKGROUND_ENABLED", "false").lower() == "true",
+        relay_interval_seconds=float(os.getenv("EKB_RELAY_INTERVAL_SECONDS", "5")),
     )

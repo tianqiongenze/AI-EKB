@@ -2,6 +2,24 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 后续待办清偿（专项 E 组）
+
+### Added
+
+- **OutboxRelay 后台任务化**：Litestar lifespan 异步循环（`EKB_RELAY_BACKGROUND_ENABLED` / `EKB_RELAY_INTERVAL_SECONDS`），免手动 /events/relay；原子认领保证多副本安全；relay 运行/发布/失败指标进 /metrics。
+- **混合检索融合层**：`retrieval.py`（RRF k=60）+ `POST /retrieval/hybrid`（契约登记）——lexical（域能力目录）/ vector（Milvus）/ graph（可插拔钩子）三腿，不可用腿降级不失败。
+- **CDC Outbox 资产**：`infra/cdc/`（Debezium Server 配置：TiDB binlog → EventRouter → Pulsar + 部署/验收文档）。
+- **前端 M1 管理台**：`web/admin/`（React18+Vite+TS + W3C DTCG 令牌），四页：运行健康/容量估算/Skill 三级晋级/审计查询；构建通过（gzip 47.6KB）。
+- `tests/conftest.py`：autouse 环境快照还原，根治测试间 env 泄漏。
+
+### Changed
+
+- **Java KGraph 去 mock**：Neo4j 不可用/空结果不再返回编造知识（设备/故障/点检），改为 `degraded:*` 显式降级标记；Java 11/11 测试通过。
+
+### Test
+
+- 基线 72 → **79 项**全绿（后台 relay 2 项 + 混合检索 5 项）；四道门禁通过。
+
 ## [Unreleased] — 2026-09 多级缓存 + create_app 拆分（专项 B/C/D）
 
 ### Added

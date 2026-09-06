@@ -6,7 +6,7 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **72 / 72 通过** | Python 全量回归（缓存/拆分后） |
+| 测试 | **79 / 79 通过** | Python 全量回归（Java 11/11） |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **36 个 / 10 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐 |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
@@ -14,7 +14,8 @@
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
 | 架构评审 | **6.7 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
-| 部署资产 | 5 形态 | K8s / Helm / Kustomize / Compose / 裸机一键 |
+| 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
+| 前端 | M1 管理台 | `web/admin/`（React18+Vite+TS，设计令牌单源，gzip 47.6KB） |
 
 ### 系统架构一图
 
@@ -448,6 +449,16 @@ P0 待办（详见评审报告 §4）：异步化热路径、Redis 分布式限�
   product/platform-product-guide.md
   product/platform-product-guide.zh-CN.md
   product/platform-product-guide.en.md
+
+## 15.1 前端管理台（M1）
+
+```bash
+cd web/admin && npm install
+VITE_API_BASE=http://127.0.0.1:8080 npm run dev    # 开发
+npm run build                                       # 构建（产物 web/admin/dist）
+```
+
+四页：运行健康（readyz+Outbox+metrics）/ 容量估算 / Skill 一键注册三级晋级 / 审计查询。设计令牌 `tokens/tokens.json`（W3C DTCG）为多端唯一视觉源。
 
 ## 15. 远端仓库与同步机制
 

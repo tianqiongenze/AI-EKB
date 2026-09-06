@@ -41,11 +41,14 @@ public class KGraphReasoningService {
                 return graphResult;
             }
         }
-        return List.of(
-                "entity:设备",
-                "relation:故障",
-                "recommendation:点检"
-        );
+        // Explicit degradation markers instead of fabricated knowledge: callers
+        // and SLO monitors must be able to tell degraded output from graph truth.
+        List<String> degraded = new ArrayList<>();
+        degraded.add(neo4jDriver == null ? "degraded:neo4j_unavailable" : "degraded:graph_empty_result");
+        if (evidenceRefs != null && !evidenceRefs.isEmpty()) {
+            degraded.add("evidence:" + evidenceRefs.get(0));
+        }
+        return degraded;
     }
 
     private List<String> fetchFromGraph(String query, List<String> evidenceRefs) {

@@ -308,3 +308,18 @@ flowchart LR
 判定：**框架层已全异步**（Litestar 事件循环零阻塞 + `sync_to_thread` 工作线程执行 + 纯 ASGI 中间件）；进一步收益在 **DB 驱动层 async 化（aiosqlite/asyncmy）**，但存储层同时被同步消费者使用（OutboxRelay、A2A 消费线程），直接改 async 会破坏其契约。路线：P1.5 先将 relay/消费者改造为异步任务化，随后存储层提供 async 门面（async 门面 + to_thread 过渡 → 原生 async 驱动），需配合真实 TiDB 压测环境验收。**不做无压测验收的假异步改造。**
 
 综合评分更新：工程质量 5.5 → **7.0**（结构欠账清偿），可扩展性 4.5 → **5.0**（缓存层就绪）。项目群综合 **6.7 → 6.9 / 10**。
+
+## 16. 第四轮落地：后续待办清偿（2026-09-07，79/79 测试 + Java 11/11 + 前端构建通过）
+
+| 待办 | 状态 | 落地内容 |
+|---|---|---|
+| P1.5 OutboxRelay 后台任务化 | ✅ | Litestar lifespan 异步循环（`EKB_RELAY_BACKGROUND_ENABLED`，原子认领保证多副本安全），relay 运行/发布/失败指标进 /metrics；默认关闭（生产开启），测试验证"免手动 /events/relay 自动发布" |
+| P1 混合检索融合层 | ✅ | `retrieval.py`：RRF 融合（k=60）+ 三腿架构（lexical=域能力目录 / vector=Milvus / graph=可插拔钩子），`POST /retrieval/hybrid`（契约已登记），不可用腿降级不失败（`degraded` + 分腿计数）；对齐 2025 混合检索（dense+sparse+graph）业界默认 |
+| CDC Outbox | ✅ 资产就绪 | `infra/cdc/`：Debezium Server 配置（TiDB binlog → EventRouter → Pulsar）+ 部署/验收文档；轮询 relay 保留为降级路径 |
+| Java 去 mock | ✅ | Neo4j 不可用/空结果时不再返回编造知识（设备/故障/点检），改为 `degraded:neo4j_unavailable / graph_empty_result` 显式降级标记；Java 11/11 测试通过 |
+| 前端 M1 管理台 | ✅ 最小落地 | `web/admin/`：React18+Vite+TS，W3C DTCG 设计令牌单源，四页（运行健康/容量估算/Skill 三级晋级/审计查询），构建产物 gzip 47.6KB（<200KB 预算） |
+| 测试环境隔离 | ✅ | `tests/conftest.py` autouse 环境快照还原——根治多测试裸改 `EKB_AUTH_TOKEN`/`EKB_ENV` 的顺序泄漏 |
+| 双 Store 方言合并 | ⏸ 判定 | 需先有 testcontainers 真 TiDB 集成测试兜底；无验证环境下的方言合并风险 > 收益，列为 testcontainers 落地后首个重构 |
+| testcontainers 集成测试 | ⏸ 判定 | Docker 工具链已就绪；需拉取 TiDB/Neo4j/Milvus 镜像与 CI 时长预算，列为下一专项首项 |
+
+综合评分更新：测试与门禁 6.0 → **6.5**（隔离根治+混合检索/后台 relay 测试），可扩展性 5.0（relay 异步任务化），功能完备度提升。项目群综合 **6.9 → 7.0 / 10**。

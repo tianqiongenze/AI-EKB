@@ -1,0 +1,33 @@
+{
+  "name": "ekb-tidb-outbox-cdc",
+  "config": {
+    "debezium.source.connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "debezium.source.database.hostname": "tidb-cluster-tidb",
+    "debezium.source.database.port": "4000",
+    "debezium.source.database.user": "ekb_cdc_reader",
+    "debezium.source.database.password": "${env:EKB_TIDB_CDC_PASSWORD}",
+    "debezium.source.database.server.id": "857443",
+    "debezium.source.database.include.list": "ekb_control_plane",
+    "debezium.source.table.include.list": "ekb_control_plane.outbox_events",
+    "debezium.source.snapshot.mode": "initial",
+    "debezium.source.topic.prefix": "ekb-outbox",
+
+    "debezium.sink.type": "pulsar",
+    "debezium.sink.pulsar.service-url": "pulsar://pulsar-broker:6650",
+    "debezium.sink.pulsar.auth-plugin": "org.apache.pulsar.client.impl.auth.AuthenticationToken",
+    "debezium.sink.pulsar.auth-params": "token:${env:EKB_PULSAR_TOKEN}",
+    "debezium.sink.pulsar.topic-name": "persistent://group/control/outbox-cdc",
+
+    "debezium.format.key": "json",
+    "debezium.format.value": "json",
+    "debezium.transforms": "outbox",
+    "debezium.transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "debezium.transforms.outbox.table.field.event.id": "id",
+    "debezium.transforms.outbox.table.field.event.key": "aggregate_type",
+    "debezium.transforms.outbox.table.field.event.type": "event_type",
+    "debezium.transforms.outbox.table.field.event.payload": "payload_json",
+    "debezium.transforms.outbox.route.by.field": "event_type",
+
+    "quarkus.log.level": "INFO"
+  }
+}

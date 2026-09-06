@@ -1,0 +1,16 @@
+/* Generated from tokens/tokens.json (W3C DTCG) — single visual source of truth. */
+:root {
+  --color-brand-primary: #1a56db;
+  --color-brand-danger: #d64545;
+  --color-surface-bg: #f7f8fa;
+  --color-surface-card: #ffffff;
+  --color-surface-text: #111827;
+  --color-surface-muted: #6b7280;
+  --color-surface-ok: #0e9f6e;
+  --color-surface-warn: #c27803;
+  --color-border: #e5e7eb;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+  --radius-card: 10px; --radius-input: 6px;
+  --typography-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --typography-size-body: 14px; --typography-size-h1: 22px;
+}

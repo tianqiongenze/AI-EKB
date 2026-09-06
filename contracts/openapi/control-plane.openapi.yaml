@@ -18,6 +18,17 @@ paths:
       responses:
         '200':
           description: Prometheus text exposition of control-plane metrics
+  /retrieval/hybrid:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HybridRetrievalRequest'
+      responses:
+        '200':
+          description: fused retrieval result
   /mcp/invoke:
     post:
       requestBody:
@@ -1402,3 +1413,31 @@ components:
     BusinessDomain:
       type: string
       enum: [strategy, rnd, manufacturing, quality, procurement, aftersales, hr, finance, materials, marketing, iot, knowledge_graph]
+  HybridRetrievalRequest:
+    type: object
+    properties:
+      tenant_id:
+        type: string
+      region_id:
+        type: string
+      query:
+        type: string
+      vector:
+        type: array
+        items:
+          type: number
+      collection_name:
+        type: string
+      top_k:
+        type: integer
+  HybridRetrievalResult:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+      legs:
+        type: object
+      degraded:
+        type: boolean

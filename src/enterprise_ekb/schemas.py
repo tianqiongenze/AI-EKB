@@ -492,3 +492,24 @@ class DataPipelineSupervisionScanResult(BaseModel):
     status: str
     alerts: list[A2ASupervisionAlert] = Field(default_factory=list)
     summary: dict[str, Any] = Field(default_factory=dict)
+
+
+class HybridRetrievalItem(BaseModel):
+    id: str
+    score: float
+    title: str | None = None
+
+
+class HybridRetrievalResult(BaseModel):
+    items: list[HybridRetrievalItem]
+    legs: dict[str, int]
+    degraded: bool
+
+
+class HybridRetrievalRequest(BaseModel):
+    tenant_id: str
+    region_id: str
+    query: str | None = None
+    vector: list[float] | None = None
+    collection_name: str | None = None
+    top_k: int = Field(default=10, ge=1, le=100)

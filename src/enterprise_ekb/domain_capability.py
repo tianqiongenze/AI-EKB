@@ -62,7 +62,7 @@ class DomainCapabilityService:
             cache_key,
             lambda: self._search_uncached(domain=domain, query=query, limit=limit).model_dump(mode="json"),
         )
-        if hit and isinstance(cached, dict):
+        if isinstance(cached, dict):
             return DomainCapabilitySearchResult.model_validate(cached)
         return cached
 
@@ -78,7 +78,7 @@ class DomainCapabilityService:
             cache_key,
             lambda: self._coverage_uncached().model_dump(mode="json"),
         )
-        if hit and isinstance(cached, dict):
+        if isinstance(cached, dict):
             return DomainCoverageResponse.model_validate(cached)
         return cached
 
