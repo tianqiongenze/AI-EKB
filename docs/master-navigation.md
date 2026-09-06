@@ -18,7 +18,9 @@ mindmap
       foundations-and-skill-primer.md
       a2a-architecture.md
       industrial-scale-roadmap.md
-    Review & Scoring
+    Review     Review & Scoring Scoring
+      docs/architecture-review-2026-09.md (v2: risk-control / DDD / cache / standards)
+      docs/frontend-multiclient-design.md
       docs/architecture-review-2026-09.md
     Storage Artifacts
       docs/storage/README.md

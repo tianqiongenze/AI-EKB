@@ -441,3 +441,17 @@ P0 待办（详见评审报告 §4）：异步化热路径、Redis 分布式限�
   product/platform-product-guide.md
   product/platform-product-guide.zh-CN.md
   product/platform-product-guide.en.md
+
+## 15. 远端仓库与同步机制
+
+- 远端：`github.com/tianqiongenze/AI-EKB`（private），主分支 `main`
+- 同步流程（每次改动后）：
+
+```bash
+git pull --rebase origin main   # 先同步远端
+git add -A && git commit -m "feat|fix|docs: ..."   # 原子化提交
+git push origin main            # 推送即触发 GitHub Actions（ci-multilang.yml）
+```
+
+- 本地大文件治理：压测原始产物（`perf/artifacts/`）、运行时数据库（`tmp/`、`data/`、`*.db`）、构建产物（`target/`、`dist/`、`node_modules/`）均已通过 `.gitignore` 排除，**入库的是报告与门禁结果而非原始日志**。
+- 提交纪律：`git push` 前本地必须通过 `pytest -q` 与四道门禁（一键脚本内建）。
