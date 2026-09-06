@@ -6,13 +6,13 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **79 / 79 通过** | Python 全量回归（Java 11/11） |
+| 测试 | **79 Python + 11 Java + 3 前端组件** | 全栈测试矩阵 |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
-| API 路由 | **36 个 / 10 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐 |
+| API 路由 | **37 个 / 11 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐（含 /retrieval/hybrid） |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **6.7 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 架构评审 | **7.2 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
 | 前端 | M1 管理台 | `web/admin/`（React18+Vite+TS，设计令牌单源，gzip 47.6KB） |
@@ -36,8 +36,62 @@ flowchart LR
 ### 质量门禁流水线（一键脚本内建）
 
 ```text
-工具链自检 → 契约一致性(36路由/17事件/14字段) → Flink preflight → replay e2e SLO → gateway SLO → 构建/部署
+工具链自检 → 契约一致性(37路由/17事件/14字段) → Flink preflight → replay e2e SLO → gateway SLO → 构建/部署
 ```
+
+### 架构深化：缓存 / 事件 / 检索三条主链路
+
+**① 多级缓存与失效链**（读路径命中即省一次源库往返；命中率指标实时可查）
+
+```mermaid
+flowchart LR
+    REQ[读请求] --> L1[L1 进程内 TTL+LRU 60s]
+    L1 -- miss --> L2[L2 Redis 300s]
+    L2 -- miss --> SRC[源: TiDB / Milvus]
+    L1 & L2 & SRC --> M[/ekb_cache_hits_total{layer}/]
+    W[写: 能力upsert / Skill晋级 / 向量upsert] -- 前缀失效 or registry epoch --> INV[失效通道] --> L1
+```
+
+**② 事件主链**（写路径零阻塞发布，多副本原子认领）
+
+```mermaid
+flowchart LR
+    H[业务 handler] --> DB[(TiDB/SQLite
+业务表 + outbox_events 同事务)]
+    DB --> R[后台 relay 循环
+原子认领 → 分组批量发布]
+    R --> P[Pulsar 17 类契约 topic]
+    R -.降级路径.-> M2[手动 /events/relay]
+    P --> CDC[Debezium Server
+binlog → Pulsar（CDC 旁路）]
+```
+
+**③ 混合检索链**（对齐行业实证：hybrid NDCG +26-31%）
+
+```mermaid
+flowchart TB
+    Q[query / vector] --> LX[lexical 腿
+域能力目录 SQL]
+    Q --> V[vector 腿
+Milvus 相似度]
+    Q --> G[graph 腿
+可插拔钩子]
+    LX & V & G --> F[RRF 融合 k=60]
+    F --> OUT[items + legs + degraded]
+```
+
+**④ GraphQL 决策**：治理面维持 REST+契约门禁（解析开销 5-15%、契约体系重建成本 vs 收益，详见评审 §12/§17.5）；性能提升由缓存/后台 relay/混合检索承担。P2 触发条件：M2 移动端出现 ≥3 路 round-trip 聚合场景时，以只读 GraphQL BFF（persisted queries）引入。
+
+### 效能与质量量化（四轮演进）
+
+| 指标 | v1（评审前） | v3（当前） | 演进 |
+|---|---|---|---|
+| Python 测试 | 57 | **79** | +22（风控 6 / 缓存 4 / relay 2 / 检索 5 / 迁移加固 5） |
+| Java 测试 | 4 类 | **11 通过** | 去 mock 后全绿 |
+| 前端测试 | 0 | **3 组件测试** | vitest + RTL |
+| app.py 体量 | 1434 行单体 | **75 行装配** | 10 上下文模块化 |
+| 工程门禁 | 4 道（两道曾误报） | 4 道全绿 + 扩展 api/ 扫描 | 脆弱解析加固 |
+| 综合评分 | 6.1 | **7.2** | 6.1→6.5→6.9→7.0→7.2 |
 
 本项目基于以下两份顶层架构文档落地实现：
 
@@ -245,6 +299,7 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 - `POST /connectors/checkpoint/update`：游标检查点更新
 - `POST /connectors/health`：联调健康检查（配置可用性）
 - `POST /connectors/pull`：联调拉取（dry_run / commit）
+- `POST /retrieval/hybrid`：混合检索（lexical+vector+graph，RRF 融合，降级不失败）
 
 连接器接入默认具备幂等语义：`(connector_system, idempotency_key)` 唯一约束，重复提交返回 `replayed` 并记录 replay 计数。
 
@@ -326,7 +381,10 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 | Redis/Neo4j/Milvus 客户端 | 高性能 client wrapper 已实现 | ✅ 已落地（控制面集成为可接入基线） |
 | K8s/Helm/Kustomize | 基线清单、Chart、overlay 齐全 | ✅ 已落地 |
 | MCP/Skill/Harness 治理 | 策略、注册、评测门禁已落地 | ✅ 已落地 |
-| 多语言服务分工 | Python/Go已形成可运行基线，Java为可运行骨架并含Sentinel降级 | ⚠️ 部分落地（业务深度仍可继续扩展） |
+| 多语言服务分工 | Python/Go 可运行基线；Java 去 mock（degraded 显式降级） | ⚠️ 部分落地（治理规则仍硬编码） |
+| 混合检索 | RRF 融合 + 三腿（lexical/vector/graph） | ✅ 已落地（契约 1:1） |
+| 后台事件 relay | lifespan 异步循环 + 运行指标 | ✅ 已落地（默认关闭，生产开启） |
+| 前端管理台 | web/admin M1.5（令牌/组件/暗色/测试） | ✅ M1 达成（M2 移动端待启动） |
 
 ## 7.1 架构评审与重构记录（2026-09）
 
@@ -458,7 +516,7 @@ VITE_API_BASE=http://127.0.0.1:8080 npm run dev    # 开发
 npm run build                                       # 构建（产物 web/admin/dist）
 ```
 
-四页：运行健康（readyz+Outbox+metrics）/ 容量估算 / Skill 一键注册三级晋级 / 审计查询。设计令牌 `tokens/tokens.json`（W3C DTCG）为多端唯一视觉源。
+四页：运行健康（readyz+Outbox+metrics）/ 容量估算 / Skill 一键注册三级晋级 / 审计查询。设计令牌 `tokens/tokens.json`（W3C DTCG）为多端唯一视觉源。M1.5：组件化（Card/StatusDot/JsonView）+ 暗色主题 + 组件测试（`npm test`，vitest+RTL 3 项）+ tsc strict 构建门禁（gzip 48KB < 200KB 预算）。
 
 ## 15. 远端仓库与同步机制
 

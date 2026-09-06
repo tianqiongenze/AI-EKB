@@ -2,6 +2,21 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 三轮评审 + 前端 M1.5
+
+### 评审
+
+- 新增三轮评审（§17）：项目群综合 **7.2/10**（四轮演进 6.1→6.5→6.9→7.0→7.2）；十维度证据化更新；风控复核 6.0（服务间达标，用户侧待 M2 账号体系）；命中率提升空间量化（audit/capacity/scan 三路径接入可再 +15-25pp）；GraphQL 复核结论：**未引入且维持不引入**（量化理由不变，P2 触发条件明确）。
+- 联网对标：RRF 为生产默认融合（hybrid NDCG +26-31%，GraphRAG 多跳 86% vs 32%）——验证本项目 RRF 选型，加权 RRF + 重排器钩子列为检索层下一步。
+
+### Changed（前端 M1.5，大厂标准）
+
+- `web/admin`：组件化抽取（Card/StatusDot/JsonView）、暗色主题令牌（`[data-theme="dark"]`，同令牌契约）、主题切换、vitest+RTL 组件测试 3 项、tsc strict 构建门禁维持（gzip 48KB）。
+
+### Test
+
+- Python 79/79 + Java 11/11 + 前端组件 3/3 + 四道门禁全绿。
+
 ## [Unreleased] — 2026-09-07 后续待办清偿（专项 E 组）
 
 ### Added

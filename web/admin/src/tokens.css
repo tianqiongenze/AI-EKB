@@ -14,3 +14,16 @@
   --typography-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   --typography-size-body: 14px; --typography-size-h1: 22px;
 }
+
+/* Dark theme override — same token contract, flipped values (M1.5). */
+[data-theme="dark"] {
+  --color-brand-primary: #6ea8ff;
+  --color-brand-danger: #ff7b7b;
+  --color-surface-bg: #0f1115;
+  --color-surface-card: #171a21;
+  --color-surface-text: #e6e8eb;
+  --color-surface-muted: #9aa1ab;
+  --color-surface-ok: #35c28f;
+  --color-surface-warn: #e0a437;
+  --color-border: #2a2f3a;
+}

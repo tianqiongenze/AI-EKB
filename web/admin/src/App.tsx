@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { Card } from "./components/Card";
+import { StatusDot } from "./components/StatusDot";
+import { JsonView } from "./components/JsonView";
 
 type Tab = "health" | "capacity" | "skills" | "audit";
 
@@ -9,15 +12,6 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "skills", label: "Skill 治理" },
   { key: "audit", label: "审计查询" },
 ];
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ background: "var(--color-surface-card)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", marginBottom: "var(--space-4)" }}>
-      <h2 style={{ fontSize: "var(--typography-size-body)", fontWeight: 600, margin: "0 0 var(--space-3)" }}>{title}</h2>
-      {children}
-    </section>
-  );
-}
 
 const inputStyle = { padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-input)", border: "1px solid var(--color-border)", width: "100%", boxSizing: "border-box" } as const;
 const buttonStyle = { padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-input)", border: "none", background: "var(--color-brand-primary)", color: "#fff", cursor: "pointer" } as const;
@@ -30,6 +24,11 @@ export default function App() {
   const [capResult, setCapResult] = useState<string>("");
   const [skillMsg, setSkillMsg] = useState("");
   const [audit, setAudit] = useState<string>("");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     (async () => {
@@ -47,10 +46,17 @@ export default function App() {
       <header style={{ display: "flex", alignItems: "baseline", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
         <h1 style={{ fontSize: "var(--typography-size-h1)", margin: 0 }}>雅迪 EKB 管理台</h1>
         {ready && (
-          <span style={{ color: "var(--color-surface-muted)" }}>
-            {ready.status} · 事件后端 {ready.event_publisher_backend} · Outbox 待发 {ready.outbox?.pending ?? 0}
-          </span>
+          <>
+            <StatusDot ok={ready.status === "ready"} label={`${ready.status} · 事件后端 ${ready.event_publisher_backend} · Outbox 待发 ${ready.outbox?.pending ?? 0}`} />
+          </>
         )}
+        <button
+          aria-label="切换主题"
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          style={{ marginLeft: "auto", padding: "var(--space-1) var(--space-3)", borderRadius: "var(--radius-input)", border: "1px solid var(--color-border)", background: "var(--color-surface-card)", color: "var(--color-surface-text)", cursor: "pointer" }}
+        >
+          {theme === "light" ? "🌙 暗色" : "☀️ 亮色"}
+        </button>
       </header>
       <nav style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
         {tabs.map((t) => (
@@ -64,10 +70,10 @@ export default function App() {
       {tab === "health" && (
         <>
           <Card title="Outbox 状态">
-            <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(ready?.outbox ?? {}, null, 2)}</pre>
+            <JsonView value={ready?.outbox ?? {}} />
           </Card>
           <Card title="/metrics（Prometheus）">
-            <pre style={{ whiteSpace: "pre-wrap", maxHeight: 320, overflow: "auto" }}>{metrics || "加载中…"}</pre>
+            <pre style={{ whiteSpace: "pre-wrap", maxHeight: 320, overflow: "auto", margin: 0 }}>{metrics || "加载中…"}</pre>
           </Card>
         </>
       )}
