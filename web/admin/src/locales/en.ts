@@ -1,0 +1,27 @@
+import type { TranslationKey } from "./zh-CN";
+
+export const en: Record<TranslationKey, string> = {
+  "app.title": "EKB Admin",
+  "header.language": "Switch language",
+  "tab.health": "Runtime Health",
+  "tab.capacity": "Capacity Estimation",
+  "tab.skills": "Skill Governance",
+  "tab.audit": "Audit Query",
+  "tab.workshop": "Workshop Screen",
+  "theme.toggle": "Toggle theme",
+  "theme.dark": "🌙 Dark",
+  "theme.light": "☀️ Light",
+  "status.readyLabel": "{status} · Event backend {backend} · Outbox pending {pending}",
+  "status.requestError": "Request Error",
+  "status.loading": "Loading…",
+  "status.placeholder": "—",
+  "card.outbox": "Outbox Status",
+  "card.metrics": "/metrics (Prometheus)",
+  "card.capacity": "Capacity Estimation",
+  "card.skills": "Register + 3-stage Skill Promotion",
+  "card.audit": "Recent Audit (tenant=group)",
+  "button.capacityEstimate": "Estimate with default baseline (100k online)",
+  "button.skillsPromote": "Register & Promote",
+  "button.auditQuery": "Query",
+  "message.skillsPromoted": "{skill} promoted to production ✅",
+};

@@ -1,0 +1,27 @@
+export const zhCN = {
+  "app.title": "雅迪 EKB 管理台",
+  "header.language": "切换语言",
+  "tab.health": "运行健康",
+  "tab.capacity": "容量估算",
+  "tab.skills": "Skill 治理",
+  "tab.audit": "审计查询",
+  "tab.workshop": "车间大屏",
+  "theme.toggle": "切换主题",
+  "theme.dark": "🌙 暗色",
+  "theme.light": "☀️ 亮色",
+  "status.readyLabel": "{status} · 事件后端 {backend} · Outbox 待发 {pending}",
+  "status.requestError": "请求错误",
+  "status.loading": "加载中…",
+  "status.placeholder": "—",
+  "card.outbox": "Outbox 状态",
+  "card.metrics": "/metrics（Prometheus）",
+  "card.capacity": "容量估算",
+  "card.skills": "注册 + 三级晋级 Skill",
+  "card.audit": "最近审计（tenant=group）",
+  "button.capacityEstimate": "按默认基线估算（10 万在线）",
+  "button.skillsPromote": "一键注册并晋级",
+  "button.auditQuery": "查询",
+  "message.skillsPromoted": "{skill} 已晋级 production ✅",
+} as const;
+
+export type TranslationKey = keyof typeof zhCN;

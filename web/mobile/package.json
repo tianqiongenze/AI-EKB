@@ -1,0 +1,20 @@
+{
+  "name": "ekb-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "//policy": "依赖版本为占位说明、不作为安装清单：本骨架以 HBuilderX 内置的 uni-app Vue3 编译器为基准（见 src/manifest.json vueVersion=3），本文件刻意不锁定 @dcloudio/* 版本以避免漂移。走 CLI 构建时请以官方模板锁定版本（npx degit dcloudio/uni-preset-vue#vite-ts，或将本目录 src/ 并入该模板），npm i 后再运行下方 scripts。",
+  "//deps": "运行所需：vue@3 与 @dcloudio/uni-app、@dcloudio/uni-h5、@dcloudio/uni-app-plus、@dcloudio/uni-mp-weixin（HBuilderX 内置提供）；样式编译需要 sass/scss 插件（HBuilderX：工具 → 插件安装 → scss/sass 编译）。",
+  "//devdeps": "CLI 构建所需：@dcloudio/vite-plugin-uni、@dcloudio/uni-cli-shared、vite@5、typescript、sass、vue-tsc。",
+  "//harmony": "鸿蒙：HBuilderX 菜单「运行 → 运行到手机或模拟器 → HarmonyOS」为过渡路径；M3 主路线迁移 uni-app x（UTS → ArkTS 原生编译），见 README.md 与 docs/frontend-multiclient-design.md §1/§5。",
+  "scripts": {
+    "dev:h5": "uni",
+    "dev:app": "uni -p app",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:h5": "uni build",
+    "build:app": "uni build -p app",
+    "build:mp-weixin": "uni build -p mp-weixin"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  }
+}

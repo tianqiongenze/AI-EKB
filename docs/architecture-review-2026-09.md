@@ -418,3 +418,18 @@ flowchart LR
 
 - **启动 Docker VM 跑 testcontainers**：守护进程未运行且启动用户 VM 属环境变更，不擅自执行；文档已给出启动后首项执行路径。
 - **supervision scan 缓存**：副作用语义（发监督事件），缓存将静默吞事件——明确排除并记录。
+
+## 19. 五轮落地：前端多端下一阶段并行执行（2026-09-07）
+
+| 大厂标准排序项 | 状态 | 落地内容 |
+|---|---|---|
+| M2 移动端 | ✅ 骨架落地 | `web/mobile/`：uni-app Vue3 基座 14 文件（健康页+容量页、pages.json/manifest、鸿蒙配置骨架），**令牌同源**（tokens.json→tokens.scss 18/18 核对一致），API 客户端与管理台语义对齐；HBuilderX/CLI 构建路径与 uni-app x（UTS→ArkTS）迁移路线写入 README |
+| i18n | ✅ | 极轻量自研（无 i18next 依赖）：类型安全 t()、localStorage 持久化、zh-CN/en 双包（漏译编译报错）、语言切换按钮；5 项 i18n 测试 |
+| Playwright E2E + Lighthouse CI | ✅ 流水线就绪 | `e2e/`（playwright 配置 + 冒烟用例：控制台渲染/页签导航/主题切换 + 控制面 /healthz 检查）+ `.github/workflows/e2e-lighthouse.yml`（chromium 安装→E2E→Lighthouse 断言→**bundle gzip<200KB 硬门禁**）；浏览器安装后本地 `npx playwright test` 可跑 |
+| 车间大屏 | ✅ | `pages/WorkshopScreen.tsx`：纯内联 SVG（甜甜圈 Outbox 分布 + relay 吞吐条形图），零新增依赖（保首包预算），设计令牌复用；已接入第 5 个导航页签（i18n key 同步） |
+| 微前端拆分 | ⏸ 排序后移 | 管理台当前单团队迭代，拆分收益<成本；触发条件：≥2 团队并行改造管理台时启动（Module Federation） |
+| 首包预算 | ✅ 保持 | 新增大屏页+i18n 后 gzip 49.9KB（预算 200KB，占用 25%） |
+
+前端测试矩阵：**8/8 组件测试**（i18n 5 + App 3）；构建门禁 tsc strict + vite 维持。
+
+本轮无 Python 代码变更（79/79 + 四门禁维持全绿）；评分：前端子项 6.5 → **7.0**（多端矩阵成形：admin M1.5 + mobile M2 骨架 + 大屏 + E2E/CI），综合维持 **7.3**。

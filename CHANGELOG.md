@@ -2,6 +2,19 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 前端多端并行落地
+
+### Added
+
+- **M2 移动端骨架** `web/mobile/`：uni-app Vue3 基座（健康/容量两页、鸿蒙配置骨架、API 客户端与管理台对齐、设计令牌 SCSS 同源翻译 18/18）。
+- **i18n**：自研轻量 t()（类型安全/localStorage/插值），zh-CN + en 双包（漏译编译报错），语言切换按钮，5 项测试。
+- **车间大屏**：`WorkshopScreen`（内联 SVG 甜甜圈/条形图，零新增依赖），接入第 5 页签（i18n 同步）。
+- **E2E + Lighthouse CI**：`e2e/` Playwright 冒烟（渲染/导航/主题/后端健康检查）+ GitHub Actions（chromium → E2E → Lighthouse 断言 → gzip<200KB 硬门禁）。
+
+### Test
+
+- 前端 8/8 组件测试 + 构建通过（gzip 49.9KB）；Python 79/79 + 四门禁维持全绿。
+
 ## [Unreleased] — 2026-09-07 四轮评审 + 缓存腿接入
 
 ### Security

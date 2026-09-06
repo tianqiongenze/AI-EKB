@@ -1,0 +1,75 @@
+/* =========================================================
+ * EKB Design Tokens — 移动端 SCSS 翻译层
+ *
+ * 生成来源（单一视觉源 / Single Source of Truth）：
+ *   web/admin/tokens/tokens.json （W3C DTCG 格式）
+ * 同源产物：
+ *   web/admin/src/tokens.css   —— Web 管理台（CSS Variables，:root + 暗色主题）
+ *   web/mobile/src/tokens.scss —— 本文件（SCSS $ 变量 + page/:root CSS 自定义属性）
+ * 同步规则：修改 tokens.json 后需同步更新两端产物；M3 计划脚本化生成与
+ *   三端一致性自动比对（docs/frontend-multiclient-design.md §2/§5）。
+ *
+ * 用法：
+ *   <style lang="scss"> 中使用 SCSS 变量（$color-brand-primary 等）；
+ *   模板内联 :style 使用 CSS 自定义属性（var(--color-brand-primary) 等）。
+ * ========================================================= */
+
+/* ---- color.brand ---- */
+$color-brand-primary: #1a56db; /* 品牌主色 */
+$color-brand-danger: #d64545; /* 危险/错误 */
+
+/* ---- color.surface ---- */
+$color-surface-bg: #f7f8fa; /* 页面背景 */
+$color-surface-card: #ffffff; /* 卡片背景 */
+$color-surface-text: #111827; /* 主文本 */
+$color-surface-muted: #6b7280; /* 次要文本 */
+$color-surface-ok: #0e9f6e; /* 健康/成功 */
+$color-surface-warn: #c27803; /* 告警 */
+
+/* ---- color.border ---- */
+$color-border: #e5e7eb;
+
+/* ---- space（间距刻度，与管理台同名同值）---- */
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-6: 24px;
+
+/* ---- radius ---- */
+$radius-card: 10px;
+$radius-input: 6px;
+
+/* ---- typography ---- */
+$typography-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+$typography-size-body: 14px;
+$typography-size-h1: 22px;
+
+/* =========================================================
+ * CSS 自定义属性镜像（供模板内联样式与运行时读取）。
+ * page：uni-app 跨端根节点选择器；:root 兜底 H5 特殊场景。
+ * 说明：本文件经 uni.scss 注入每个 SFC，page 块会随页重复输出，
+ *       属性量极小，属预期行为；暗色主题暂随管理台 tokens.css，M3 一并对齐。
+ * ========================================================= */
+page,
+:root {
+  --color-brand-primary: #1a56db;
+  --color-brand-danger: #d64545;
+  --color-surface-bg: #f7f8fa;
+  --color-surface-card: #ffffff;
+  --color-surface-text: #111827;
+  --color-surface-muted: #6b7280;
+  --color-surface-ok: #0e9f6e;
+  --color-surface-warn: #c27803;
+  --color-border: #e5e7eb;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-card: 10px;
+  --radius-input: 6px;
+  --typography-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --typography-size-body: 14px;
+  --typography-size-h1: 22px;
+}

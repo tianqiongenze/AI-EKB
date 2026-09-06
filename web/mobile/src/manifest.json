@@ -1,0 +1,49 @@
+{
+  "name": "ekb-mobile",
+  "appid": "",
+  "description": "雅迪 EKB 移动端 M2 骨架（uni-app Vue3 过渡基座，鸿蒙主路线为 uni-app x / ArkTS）",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "locale": "zh-Hans",
+  "vueVersion": "3",
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>"
+        ]
+      },
+      "ios": {},
+      "sdkConfigs": {}
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "雅迪 EKB 移动端",
+    "router": {
+      "mode": "hash",
+      "base": "/mobile/"
+    }
+  },
+  "//app-harmony": "鸿蒙配置节（注释骨架，未启用）。正式启用时在本文件增加 app-harmony 节，形如：\"app-harmony\": { \"minSdkVersion\": 12, \"packOptions\": { \"ignore\": [], \"include\": [] }, \"distribute\": { \"sign\": {} } }，并通过 HBuilderX「运行 → 运行到手机或模拟器 → HarmonyOS」联调。注意：M3 主路线为 uni-app x（UTS → ArkTS 原生编译，见 docs/frontend-multiclient-design.md §1/§5），本骨架仅作 uni-app Vue3 过渡基座。",
+  "//tokens": "globalStyle / pages.json 中的导航栏颜色 #1a56db、#f7f8fa 取自设计令牌 web/admin/tokens/tokens.json（color.brand.primary / color.surface.bg），与 src/tokens.scss 同源。"
+}

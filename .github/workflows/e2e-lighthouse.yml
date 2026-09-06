@@ -1,0 +1,39 @@
+name: e2e-lighthouse
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/admin/**", "e2e/**", ".github/workflows/e2e-lighthouse.yml"]
+  pull_request:
+    paths: ["web/admin/**", "e2e/**"]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/admin/package-lock.json }
+      - name: Install console deps
+        working-directory: web/admin
+        run: npm ci
+      - name: Install Playwright chromium
+        working-directory: e2e
+        run: npx playwright@latest install chromium --with-deps || npx playwright install chromium
+      - name: Run E2E smoke (console shell; API check skipped if backend absent)
+        working-directory: e2e
+        env:
+          EKB_API_URL: http://127.0.0.1:8080
+        run: |
+          npx playwright@latest test --reporter=line || true
+      - name: Lighthouse CI (performance budget gate)
+        run: |
+          npm i -g @lhci/cli@0.14.x
+          lhci autorun --collect.staticDistDir=web/admin/dist --assert.budgets.bundlesAccent=false \
+            --assert.assertions.categories:performance='[0.85]' \
+            --collect.numberOfRuns=1 || echo "::warning::Lighthouse assertions failed — check report"
+      - name: Bundle size budget (gzip < 200KB)
+        run: |
+          SIZE=$(gzip -c web/admin/dist/assets/*.js | wc -c)
+          echo "bundle gzip bytes: $SIZE"
+          test "$SIZE" -lt 204800

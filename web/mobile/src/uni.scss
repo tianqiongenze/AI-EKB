@@ -1,0 +1,17 @@
+/* =========================================================
+ * uni-app 全局样式变量入口（本文件内容会被自动注入每个 SFC 的 <style>）。
+ *
+ * 令牌来源（单一视觉源）：web/admin/tokens/tokens.json（W3C DTCG）
+ *   → ./tokens.scss（SCSS 翻译层）
+ *   → 与 web/admin/src/tokens.css（Web 管理台产物）同源同值。
+ * ========================================================= */
+@import "./tokens.scss";
+
+/* uni-app / uni-ui 内置变量别名：把官方默认色替换为品牌令牌 */
+$uni-color-primary: $color-brand-primary;
+$uni-color-success: $color-surface-ok;
+$uni-color-warning: $color-surface-warn;
+$uni-color-error: $color-brand-danger;
+$uni-text-color: $color-surface-text;
+$uni-bg-color: $color-surface-bg;
+$uni-border-color: $color-border;

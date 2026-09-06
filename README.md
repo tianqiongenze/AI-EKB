@@ -6,7 +6,7 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **83 Python + 11 Java + 3 前端组件** | 全栈测试矩阵 |
+| 测试 | **83 Python + 11 Java + 8 前端组件** | 全栈测试矩阵 |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **37 个 / 11 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐（含 /retrieval/hybrid） |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
@@ -15,7 +15,7 @@
 | 架构评审 | **7.3 / 10** |（八特性国标矩阵见评审 §18.2）| 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
-| 前端 | M1 管理台 | `web/admin/`（React18+Vite+TS，设计令牌单源，gzip 47.6KB） |
+| 前端多端 | admin M1.5 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 49.9KB）+ `web/mobile`（uni-app，鸿蒙路线） |
 
 ### 系统架构一图
 
@@ -508,7 +508,13 @@ P0 待办（详见评审报告 §4）：异步化热路径、Redis 分布式限�
   product/platform-product-guide.zh-CN.md
   product/platform-product-guide.en.md
 
-## 15.1 前端管理台（M1）
+## 15.1 前端多端（M1.5 + M2 骨架）
+
+- `web/admin`：管理台（含**车间大屏**第 5 页签、中/EN 语言切换、暗色主题）；组件测试 `npm test`（8 项）；构建门禁 gzip<200KB 由 CI 硬校验。
+- `web/mobile`：uni-app Vue3 骨架（健康/容量页，令牌与 admin 同源），HBuilderX 打开即可运行至浏览器/手机/小程序/HarmonyOS；M3 迁移 uni-app x（UTS→ArkTS 原生编译）。
+- `e2e/`：Playwright 冒烟 + Lighthouse CI（`.github/workflows/e2e-lighthouse.yml`），本地 `npx playwright install chromium && npx playwright test`。
+
+## 15.2 前端管理台（M1）
 
 ```bash
 cd web/admin && npm install
