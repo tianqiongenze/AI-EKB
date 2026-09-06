@@ -381,3 +381,40 @@ flowchart LR
 
 已达成（M1.5）：设计令牌单源（亮/暗双主题）、组件化（Card/StatusDot/JsonView）、组件测试（vitest+RTL 3 项）、构建门禁（tsc strict + vite，gzip 48KB<200KB 预算）。
 下一阶段（按大厂标准）：① **M2 移动端**（uni-app x，鸿蒙硬要求）与小程序同仓共码 ② 管理台微前端拆分（skill/审计/容量三子应用，Module Federation）③ E2E（Playwright）+ Lighthouse CI 进流水线 ④ i18n（zh-CN/en）与无障碍审计 ⑤ 大屏端（ECharts 车间看板）。
+
+## 18. 四轮评审（2026-09-07 下午，83/83 测试 + 四门禁全绿）
+
+### 18.1 本轮重构落地
+
+| 项 | 内容 | 依据 |
+|---|---|---|
+| 缓存第三/四腿接入 | **audit query**（TTL 30s，追加型日志免失效）与 **capacity estimate**（TTL 3600s，纯函数按 payload 哈希）——注意 capacity 的事件副作用保留在缓存之外，每次调用仍发 `capacity.estimated` | 兑现 §17.4 "+15-25pp" 承诺的可执行部分；supervision scan **有意不缓存**（scan 有发事件副作用，缓存会吞掉监督事件） |
+| 风控新发现修复 | `POST /capacity/estimate` 原本**完全未鉴权**（任意调用+写事件）→ 补 Bearer 校验（token 未配置时行为不变，向后兼容） | 风控专项复核新发现 |
+| 检索层对标升级 | **加权 RRF**（`weights`，下压弱势召回源）+ **重排钩子**（`reranker`，供 cross-encoder 接入）——对标 2026 实证：RRF 为生产默认（hybrid NDCG +26-31%）、强势召回源应加权 | [Atlan](https://atlan.com/know/hybrid-rag/)、[MongoDB](https://www.mongodb.com/resources/basics/reciprocal-rank-fusion)、[arXiv 2408.04948](https://arxiv.org/abs/2408.04948) |
+| testcontainers 判定 | **实测 Docker 守护进程未运行**（rancher-desktop socket 无响应、colima 未启动）；不擅自启动用户 VM → 维持缓办，启动后即为下一专项首项 | §16/§17 判定延续，本次补运行时证据 |
+
+### 18.2 国标合规矩阵（GB/T 25000.51-2016 RUSP 八特性）
+
+对标口径：GB/T 25000.51-2016（现行有效，2016 修订版将 信息安全 与 兼容性 纳入特性）；国际对应 ISO/IEC 25010:2023 已扩至 9 特性（新增 safety），未来国标修订跟进。
+
+| 特性 | 符合度 | 证据与差距 |
+|---|---|---|
+| 功能完备性 | 7.5 | 37 端点契约 1:1、17 类事件、12 业务域覆盖（domain/capabilities/coverage 审计） |
+| 功能正确性 | 7.0 | 83 Python + 11 Java + 3 前端测试全绿；四门禁；缺真机中间件集成测试 |
+| 性能效率 | 5.5 | 缓存四腿 + 异步 relay + Granian；无公开压测报告（perf/tiered 有框架） |
+| 兼容性 | 7.0 | SQLite/TiDB 双驱动、OpenAPI/Proto 双契约、MySQL 方言 ESCAPE 语法一致 |
+| 信息安全性 | 6.5 | 防重放/JWT/限流/凭据 Secret 化/LIKE 转义/SSRF 纵深；缺 WORM 审计与等保三级双因子 |
+| 可靠性 | 7.0 | Outbox 全生命周期 + 原子认领 + dead-letter + 后台自愈 |
+| 维护性 | 7.5 | 10 上下文模块、75 行装配层、契约门禁防漂移、CHANGELOG 纪律 |
+| 可移植性 | 7.5 | K8s/Helm/Kustomize/Compose/裸机五形态 + 双驱动 + 无 OS 绑定 |
+
+### 18.3 评分更新
+
+- 安全与合规 6.0 → **6.3**（capacity 鉴权缺口关闭、国标矩阵建立）
+- 缓存：命中率仪表盘四腿齐备（policy/domain/vector + audit/capacity），生产流量进入即实测
+- **综合 7.2 → 7.3**；演进曲线：6.1→6.5→6.7→6.9→7.0→7.2→7.3
+
+### 18.4 明确不做与原因（本轮）
+
+- **启动 Docker VM 跑 testcontainers**：守护进程未运行且启动用户 VM 属环境变更，不擅自执行；文档已给出启动后首项执行路径。
+- **supervision scan 缓存**：副作用语义（发监督事件），缓存将静默吞事件——明确排除并记录。

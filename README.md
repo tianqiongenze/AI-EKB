@@ -6,13 +6,13 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **79 Python + 11 Java + 3 前端组件** | 全栈测试矩阵 |
+| 测试 | **83 Python + 11 Java + 3 前端组件** | 全栈测试矩阵 |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **37 个 / 11 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐（含 /retrieval/hybrid） |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **7.2 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 架构评审 | **7.3 / 10** |（八特性国标矩阵见评审 §18.2）| 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
 | 前端 | M1 管理台 | `web/admin/`（React18+Vite+TS，设计令牌单源，gzip 47.6KB） |

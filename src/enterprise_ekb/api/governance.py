@@ -86,8 +86,17 @@ def routes(ctx: ControlPlaneContext) -> list:
         )
         return result
     @post("/capacity/estimate", status_code=200, sync_to_thread=True)
-    def capacity_estimate(data: CapacityEstimateRequest) -> CapacityEstimateResult:
-        result = estimate_capacity(data)
+    def capacity_estimate(data: CapacityEstimateRequest, request: Request) -> CapacityEstimateResult:
+        if ctx.config.auth_token and not ctx._bearer_matches(request):
+            raise HTTPException(status_code=401, detail="unauthorized")
+        # Pure compute: cache by payload hash (audit event below still emitted every call).
+        cache_key = ctx.cache.key("capacity", data.model_dump(mode="json"))
+        hit, cached = ctx.cache.get_or_load(
+            cache_key,
+            lambda: estimate_capacity(data).model_dump(mode="json"),
+            ttl_seconds=3600,
+        )
+        result = CapacityEstimateResult.model_validate(cached) if isinstance(cached, dict) else cached
         ctx.store.enqueue_outbox(
             event_type="capacity.estimated",
             payload={
@@ -104,7 +113,14 @@ def routes(ctx: ControlPlaneContext) -> list:
     @post("/audit/query", status_code=200, sync_to_thread=True)
     def query_audit(data: AuditQuery, request: Request) -> dict[str, object]:
         ctx._require_admin_auth(request)
-        items = ctx.store.recent_audits(limit=data.limit)
+        # Read-mostly: short TTL without invalidation (append-only audit log).
+        cache_key = ctx.cache.key("audit:recent", data.limit)
+        hit, cached = ctx.cache.get_or_load(
+            cache_key,
+            lambda: ctx.store.recent_audits(limit=data.limit),
+            ttl_seconds=30,
+        )
+        items = cached
         return {
             "count": len(items),
             "items": items,

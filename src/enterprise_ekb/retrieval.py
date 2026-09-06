@@ -18,14 +18,25 @@ from typing import Any
 from enterprise_ekb.schemas import HybridRetrievalItem, HybridRetrievalResult
 
 
-def reciprocal_rank_fusion(rankings: list[list[str]], k: int = 60) -> list[tuple[str, float]]:
-    """Fuse ranked id lists; returns ids sorted by fused score desc (stable)."""
+def reciprocal_rank_fusion(
+    rankings: list[list[str]],
+    k: int = 60,
+    weights: list[float] | None = None,
+) -> list[tuple[str, float]]:
+    """Fuse ranked id lists; returns ids sorted by fused score desc (stable).
+
+    `weights` allows down-weighting a weaker retriever (weighted RRF); default
+    is uniform, the production default per published benchmarks.
+    """
     if k <= 0:
         raise ValueError("k must be positive")
+    if weights is not None and len(weights) != len(rankings):
+        raise ValueError("weights must match rankings length")
+    effective = weights if weights is not None else [1.0] * len(rankings)
     scores: dict[str, float] = {}
-    for ranking in rankings:
+    for ranking, weight in zip(rankings, effective):
         for rank, doc_id in enumerate(ranking, start=1):
-            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
+            scores[doc_id] = scores.get(doc_id, 0.0) + weight / (k + rank)
     return sorted(scores.items(), key=lambda item: (-item[1], item[0]))
 
 
@@ -36,11 +47,15 @@ class HybridRetriever:
         milvus_client: Any | None = None,
         graph_search: Any | None = None,
         k: int = 60,
+        leg_weights: list[float] | None = None,
+        reranker: Any | None = None,
     ) -> None:
         self.domain_capability_service = domain_capability_service
         self.milvus_client = milvus_client
         self.graph_search = graph_search
         self.k = k
+        self.leg_weights = leg_weights
+        self.reranker = reranker
 
     def retrieve(
         self,
@@ -85,11 +100,13 @@ class HybridRetriever:
             except Exception:
                 legs["graph"] = 0
 
-        fused = reciprocal_rank_fusion(rankings, k=self.k)[:top_k]
+        fused = reciprocal_rank_fusion(rankings, k=self.k, weights=self.leg_weights)[:top_k]
         items = [
             HybridRetrievalItem(id=doc_id, score=round(score, 6), title=titles.get(doc_id))
             for doc_id, score in fused
         ]
+        if self.reranker is not None:
+            items = list(self.reranker(items))[:top_k]
         return HybridRetrievalResult(
             items=items,
             legs=legs,

@@ -2,6 +2,22 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 四轮评审 + 缓存腿接入
+
+### Security
+
+- `POST /capacity/estimate` 补 Bearer 鉴权（原完全未授权即可调用并写事件；token 未配置时行为不变）。
+
+### Added
+
+- 缓存第四/五腿：audit query（TTL 30s，追加型日志）与 capacity estimate（TTL 3600s，纯函数哈希）——supervision scan 有意排除（副作用语义）。
+- 检索层：加权 RRF（`weights`）+ 重排钩子（`reranker`），对标 2026 RRF 生产默认实证。
+- 国标合规矩阵（GB/T 25000.51-2016 八特性逐项评估，评审 §18.2）。
+
+### Test
+
+- 基线 79 → **83 项**全绿（鉴权/缓存命中指标/加权 RRF 4 项）；四门禁通过；综合评分 7.2 → **7.3**。
+
 ## [Unreleased] — 2026-09-07 三轮评审 + 前端 M1.5
 
 ### 评审
