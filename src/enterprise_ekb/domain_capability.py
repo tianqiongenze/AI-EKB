@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from typing import Any
+
 from enterprise_ekb.schemas import (
     BusinessCapabilityManifest,
     BusinessDomain,
@@ -42,17 +44,45 @@ def _find_baseline(domain: BusinessDomain) -> DomainBaseline:
 
 
 class DomainCapabilityService:
-    def __init__(self, store) -> None:
+    def __init__(self, store, cache: Any | None = None) -> None:
         self._store = store
+        self._cache = cache
 
     def upsert(self, capability: BusinessCapabilityManifest) -> int:
-        return self._store.upsert_business_capability(capability)
+        capability_id = self._store.upsert_business_capability(capability)
+        if self._cache is not None:
+            self._cache.delete_prefix("domain:")
+        return capability_id
 
     def search(self, domain: BusinessDomain | None = None, query: str | None = None, limit: int = 100) -> DomainCapabilitySearchResult:
+        if self._cache is None:
+            return self._search_uncached(domain=domain, query=query, limit=limit)
+        cache_key = self._cache.key("domain:search", domain, query, limit)
+        hit, cached = self._cache.get_or_load(
+            cache_key,
+            lambda: self._search_uncached(domain=domain, query=query, limit=limit).model_dump(mode="json"),
+        )
+        if hit and isinstance(cached, dict):
+            return DomainCapabilitySearchResult.model_validate(cached)
+        return cached
+
+    def _search_uncached(self, domain: BusinessDomain | None = None, query: str | None = None, limit: int = 100) -> DomainCapabilitySearchResult:
         items = self._store.list_business_capabilities(domain=domain, query=query, limit=limit)
         return DomainCapabilitySearchResult(count=len(items), items=items)
 
     def coverage(self) -> DomainCoverageResponse:
+        if self._cache is None:
+            return self._coverage_uncached()
+        cache_key = self._cache.key("domain:coverage")
+        hit, cached = self._cache.get_or_load(
+            cache_key,
+            lambda: self._coverage_uncached().model_dump(mode="json"),
+        )
+        if hit and isinstance(cached, dict):
+            return DomainCoverageResponse.model_validate(cached)
+        return cached
+
+    def _coverage_uncached(self) -> DomainCoverageResponse:
         all_items = self._store.list_business_capabilities(limit=2000)
         by_domain: dict[BusinessDomain, list[BusinessCapabilityManifest]] = {}
         for item in all_items:

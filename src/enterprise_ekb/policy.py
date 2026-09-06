@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from enterprise_ekb.schemas import GatewayInvokeRequest
 from enterprise_ekb.skill_registry import SkillRegistry
@@ -13,10 +14,30 @@ class PolicyDecision:
 
 
 class PolicyEngine:
-    def __init__(self, skill_registry: SkillRegistry) -> None:
+    def __init__(self, skill_registry: SkillRegistry, cache: Any | None = None) -> None:
         self.skill_registry = skill_registry
+        self._cache = cache
 
     def evaluate_invoke(self, request: GatewayInvokeRequest) -> PolicyDecision:
+        if self._cache is not None:
+            cache_key = self._cache.key(
+                "policy",
+                self.skill_registry.epoch,
+                request.skill_name,
+                request.skill_version,
+                request.tool_name,
+                request.domain,
+                request.region_id,
+            )
+            hit, cached = self._cache.get_json(cache_key)
+            if hit and isinstance(cached, dict):
+                return PolicyDecision(**cached)
+        decision = self._evaluate_uncached(request)
+        if self._cache is not None:
+            self._cache.set_json(cache_key, {"allowed": decision.allowed, "reason": decision.reason})
+        return decision
+
+    def _evaluate_uncached(self, request: GatewayInvokeRequest) -> PolicyDecision:
         try:
             skill = self.skill_registry.get(request.skill_name, request.skill_version)
         except KeyError:

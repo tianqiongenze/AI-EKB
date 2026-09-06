@@ -19,6 +19,7 @@ class SkillRegistry:
     def __init__(self, store: SQLiteControlPlaneStore | None = None) -> None:
         self._skills: dict[tuple[str, str], StoredSkill] = {}
         self._store = store
+        self.epoch = 0  # bumped on every mutation; part of policy cache keys
         if self._store is not None:
             for row in self._store.list_skills():
                 key = (row.manifest.skill_name, row.manifest.version)
@@ -35,6 +36,7 @@ class SkillRegistry:
         if self._store is not None:
             self._store.create_skill(manifest=manifest, stage=SkillStage.draft)
         self._skills[key] = stored
+        self.epoch += 1
         return stored
 
     def get(self, skill_name: str, version: str) -> StoredSkill:
@@ -52,6 +54,7 @@ class SkillRegistry:
         if self._store is not None:
             self._store.update_skill_stage(skill_name=skill_name, version=version, stage=target)
         self._skills[(skill_name, version)] = updated
+        self.epoch += 1
         return updated
 
     @staticmethod

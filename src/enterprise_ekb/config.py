@@ -50,6 +50,9 @@ class AppConfig:
     datalake_allowed_topic_prefixes: list[str]
     datalake_allowed_table_prefixes: list[str]
     rate_limit_backend: str
+    cache_backend: str
+    cache_l1_ttl_seconds: int
+    cache_l2_ttl_seconds: int
     request_signing_secret: str
     replay_window_seconds: int
     jwt_hs256_secret: str
@@ -145,6 +148,9 @@ def load_config() -> AppConfig:
             os.getenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_")
         ),
         rate_limit_backend=os.getenv("EKB_RATE_LIMIT_BACKEND", "memory"),
+        cache_backend=os.getenv("EKB_CACHE_BACKEND", "memory"),
+        cache_l1_ttl_seconds=int(os.getenv("EKB_CACHE_L1_TTL_SECONDS", "60")),
+        cache_l2_ttl_seconds=int(os.getenv("EKB_CACHE_L2_TTL_SECONDS", "300")),
         request_signing_secret=os.getenv("EKB_REQUEST_SIGNING_SECRET", ""),
         replay_window_seconds=int(os.getenv("EKB_REPLAY_WINDOW_SECONDS", "300")),
         jwt_hs256_secret=os.getenv("EKB_JWT_HS256_SECRET", ""),

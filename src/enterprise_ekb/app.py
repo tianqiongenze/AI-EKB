@@ -34,6 +34,7 @@ from enterprise_ekb.domain_capability import DomainCapabilityService, default_do
 from enterprise_ekb.mcp_gateway import MCPGateway
 from enterprise_ekb.policy import PolicyEngine
 from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
+from enterprise_ekb.cache import MultiLevelCache
 from enterprise_ekb.risk_control import (
     AntiReplayMiddleware,
     DistributedRateLimiter,
@@ -150,8 +151,27 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
     else:
         store = SQLiteControlPlaneStore(db_path=resolved_db_path)
+    redis_backend = None
+    if config.rate_limit_backend.lower() == "redis" or config.cache_backend.lower() == "redis":
+        try:
+            redis_backend = HighPerformanceRedisClient(
+                RedisConfig(
+                    url=config.redis_url,
+                    max_connections=config.redis_max_connections,
+                    socket_timeout_seconds=config.redis_socket_timeout_seconds,
+                    socket_connect_timeout_seconds=config.redis_socket_connect_timeout_seconds,
+                )
+            ).client
+        except Exception:
+            _logger.warning("Redis backend init failed; distributed limits and L2 cache disabled", exc_info=True)
+            redis_backend = None
+    cache = MultiLevelCache(
+        l1_ttl_seconds=config.cache_l1_ttl_seconds,
+        l2_ttl_seconds=config.cache_l2_ttl_seconds,
+        redis_client=redis_backend if config.cache_backend.lower() == "redis" else None,
+    )
     skill_registry = SkillRegistry(store=store)
-    policy_engine = PolicyEngine(skill_registry=skill_registry)
+    policy_engine = PolicyEngine(skill_registry=skill_registry, cache=cache)
     mcp_gateway = MCPGateway(policy_engine=policy_engine)
     harness_gate = HarnessGate()
     if config.event_publisher_backend.lower() == "pulsar" and config.pulsar_service_url:
@@ -172,27 +192,13 @@ def create_app(db_path: str | None = None) -> Litestar:
     else:
         publisher = InMemoryPublisher()
     outbox_relay = OutboxRelay(store=store, publisher=publisher)
-    domain_capability_service = DomainCapabilityService(store=store)
+    domain_capability_service = DomainCapabilityService(store=store, cache=cache)
     connector_runtime = ConnectorRuntime(store=store)
     mcp_rate_limiter = TokenBucketRateLimiter(config.mcp_rate_limit_per_minute)
     a2a_rate_limiter = TokenBucketRateLimiter(config.a2a_rate_limit_per_minute)
     tenant_region_mcp_limiter = TenantRegionRateLimiter(config.mcp_rate_limit_per_minute)
     tenant_region_a2a_limiter = TenantRegionRateLimiter(config.a2a_rate_limit_per_minute)
 
-    redis_backend = None
-    if config.rate_limit_backend.lower() == "redis":
-        try:
-            redis_backend = HighPerformanceRedisClient(
-                RedisConfig(
-                    url=config.redis_url,
-                    max_connections=config.redis_max_connections,
-                    socket_timeout_seconds=config.redis_socket_timeout_seconds,
-                    socket_connect_timeout_seconds=config.redis_socket_connect_timeout_seconds,
-                )
-            ).client
-        except Exception:
-            _logger.warning("Redis rate-limit backend init failed; falling back to in-memory limits", exc_info=True)
-            redis_backend = None
     distributed_mcp_limiter = (
         DistributedRateLimiter(config.mcp_rate_limit_per_minute, redis_client=redis_backend)
         if redis_backend is not None
@@ -1238,14 +1244,16 @@ def create_app(db_path: str | None = None) -> Litestar:
         if milvus_client is None:
             raise HTTPException(status_code=503, detail="milvus_unavailable")
         milvus_client.batch_upsert(data.collection_name, data.rows)
+        cache.delete_prefix("vector:")
         return {"status": "ok"}
 
     @post("/vector/search", status_code=200, sync_to_thread=True)
     def vector_search(data: VectorSearchRequest) -> VectorSearchResult:
         if milvus_client is None:
             raise HTTPException(status_code=503, detail="milvus_unavailable")
-        results = milvus_client.search(data.collection_name, data.vectors, data.limit)
-        return VectorSearchResult(results=results)
+        cache_key = cache.key("vector:search", data.collection_name, data.vectors, data.limit)
+        hit, cached = cache.get_or_load(cache_key, lambda: milvus_client.search(data.collection_name, data.vectors, data.limit))
+        return VectorSearchResult(results=cached)
 
     @post("/domain/capabilities/upsert", status_code=200, sync_to_thread=True)
     def upsert_domain_capability(data: BusinessCapabilityManifest) -> dict[str, object]:
