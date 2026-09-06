@@ -1,0 +1,40 @@
+global:
+  region: cn-north-1
+  environment: production
+
+controlPlane:
+  replicas: 6
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+
+gateway:
+  replicas: 12
+  resources:
+    requests:
+      cpu: "2"
+      memory: "2Gi"
+    limits:
+      cpu: "8"
+      memory: "8Gi"
+
+datastore:
+  tidb:
+    enabled: true
+    topology: regional-primary
+  redis:
+    enabled: true
+    mode: regional-primary
+  neo4j:
+    enabled: true
+    mode: causal-cluster-primary
+  milvus:
+    enabled: true
+    mode: regional-primary
+  pulsar:
+    enabled: true
+    mode: geo-replication-hub

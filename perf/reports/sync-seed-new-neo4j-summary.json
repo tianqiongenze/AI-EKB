@@ -1,0 +1,15 @@
+{
+  "generated_at": 1775552798,
+  "stores": [
+    {
+      "store": "neo4j",
+      "target": 200000,
+      "inserted": 93000,
+      "seconds": 234.658,
+      "qps": 396.32,
+      "status": "failed",
+      "note": "Couldn't connect to 127.0.0.1:17687 (resolved to ('127.0.0.1:17687',)):\nFailed to establish connection to ResolvedIPv4Address(('127.0.0.1', 17687)) (reason [Errno 61] Connection refused)"
+    }
+  ],
+  "all_ok": false
+}

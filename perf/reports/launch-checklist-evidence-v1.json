@@ -1,0 +1,10 @@
+{
+  "generated_at": 1775563143,
+  "artifacts": {
+    "multi_env_multiactive": "perf/reports/multi-env-multiactive-summary.json",
+    "data_sync": "perf/reports/multiregion-data-sync-summary.json",
+    "dryrun": "perf/reports/production-param-dryrun-summary-final.json",
+    "checklist_doc": "docs/ops/production-launch-checklist-v1.md"
+  },
+  "status": "ok"
+}

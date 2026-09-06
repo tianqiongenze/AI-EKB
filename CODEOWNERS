@@ -1,0 +1,18 @@
+# Default owner for all files
+* @maintainers
+
+# Control plane (Python)
+/src/enterprise_ekb/ @platform-control-plane
+
+# Infra and deployment
+/infra/ @platform-sre
+
+# Java service
+/services/java-kgraph/ @java-platform
+
+# Go service
+/services/go-gateway/ @go-platform
+
+# Contracts and docs
+/contracts/ @platform-architecture
+/docs/ @platform-architecture

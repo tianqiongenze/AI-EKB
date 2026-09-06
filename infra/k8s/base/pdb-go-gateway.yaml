@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ekb-go-gateway-pdb
+  namespace: ekb-control-plane
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: ekb-go-gateway

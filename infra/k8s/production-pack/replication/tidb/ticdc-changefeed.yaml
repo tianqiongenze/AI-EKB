@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tidb-ticdc-changefeed
+  namespace: ekb-control-plane
+data:
+  changefeed.toml: |
+    [sink]
+      protocol = "open-protocol"
+      dispatchers = [
+        { matcher = ["ekb_control_plane.*"], dispatcher = "ts" }
+      ]
+    [filter]
+      rules = ['ekb_control_plane.*']
+    [cyclic-replication]
+      enable = true
+      replica-id = 1

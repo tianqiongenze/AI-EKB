@@ -1,0 +1,16 @@
+{
+  "result": [
+    {
+      "sys_id": "inc001",
+      "number": "INC0010001",
+      "short_description": "Vehicle battery alert",
+      "sys_updated_on": "2026-03-30 09:00:00"
+    },
+    {
+      "sys_id": "inc002",
+      "number": "INC0010002",
+      "short_description": "Controller firmware mismatch",
+      "sys_updated_on": "2026-03-30 09:05:00"
+    }
+  ]
+}

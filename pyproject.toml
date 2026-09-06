@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yadea-ekb"
+version = "0.1.0"
+description = "Yadea Technology Group industrial AI knowledge base platform with MCP, Agent Skills, and Harness"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "litestar>=2.16,<3",
+  "granian>=2.0.0",
+  "pydantic>=2.7.0",
+  "httpx>=0.27.0",
+  "PyYAML>=6.0.1",
+  "pymysql>=1.1.1",
+  "pulsar-client>=3.5.0",
+  "redis>=5.0.0",
+  "neo4j>=5.19.0",
+  "pymilvus>=2.4.4",
+  "milvus-lite>=2.5.0",
+  "setuptools<81",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "grpcio-tools>=1.62.2",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

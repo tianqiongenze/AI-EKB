@@ -1,0 +1,15 @@
+{
+  "generated_at": 1775372358,
+  "stores": [
+    {
+      "store": "neo4j",
+      "target": 100000,
+      "inserted": 100000,
+      "seconds": 27.714,
+      "qps": 3608.32,
+      "status": "ok",
+      "note": ""
+    }
+  ],
+  "all_ok": true
+}

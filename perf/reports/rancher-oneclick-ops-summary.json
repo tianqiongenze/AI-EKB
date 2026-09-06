@@ -1,0 +1,18 @@
+{
+  "generated_at": 1775598627,
+  "rancher_desktop_installed": true,
+  "rancher_desktop_path": "/Applications/Rancher Desktop.app",
+  "kube_context": "kind-ekb-multiregion",
+  "management_policy": "docs/ops/rancher-desktop-management-policy.md",
+  "artifacts": {
+    "multi_env": "perf/reports/multi-env-multiactive-summary.json",
+    "failover_load": "perf/reports/multiregion-failover-load-summary.json",
+    "dryrun": "perf/reports/production-param-dryrun-summary.json",
+    "sync_final_audit": "perf/reports/multiregion-data-sync-final-audit.json",
+    "arch_upgrade": "perf/reports/architecture-upgrade-roadmap.json"
+  },
+  "status": "ok",
+  "m1_pilot": "perf/reports/m1-pilot-acceptance-summary.json",
+  "rancher_policy": "docs/ops/rancher-desktop-management-policy.md",
+  "dryrun": "perf/reports/production-param-dryrun-summary.json"
+}

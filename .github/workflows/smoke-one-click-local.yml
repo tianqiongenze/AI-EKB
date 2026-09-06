@@ -1,0 +1,40 @@
+name: smoke-one-click-local
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps for checks
+        run: python -m pip install --upgrade pip pyyaml grpcio-tools
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run one-click local smoke (checks + compose up)
+        env:
+          SKIP_BOOTSTRAP_DEV_TOOLCHAIN: "true"
+          SKIP_BOOTSTRAP_DEPLOY_RUNTIME: "true"
+        run: |
+          bash scripts/one_click_build_and_deploy.sh local
+
+      - name: Validate health endpoint
+        run: |
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:8080/healthz
+
+      - name: Tear down compose stack
+        if: always()
+        run: |
+          docker compose -f infra/docker-compose.phase3.yml down -v

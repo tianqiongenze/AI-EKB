@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekb-flink-taskmanager
+  namespace: ekb-control-plane
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ekb-flink-taskmanager
+  template:
+    metadata:
+      labels:
+        app: ekb-flink-taskmanager
+    spec:
+      containers:
+        - name: taskmanager
+          image: yadea-ekb-flink-session:0.1.0
+          args: ["taskmanager"]
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: flink-jobmanager
+                taskmanager.numberOfTaskSlots: 8
+                state.backend: rocksdb
+                state.checkpoints.dir: s3a://ekb-lakehouse/checkpoints/
+                state.savepoints.dir: s3a://ekb-lakehouse/savepoints/
+          envFrom:
+            - configMapRef:
+                name: ekb-flink-dataplane-config
+            - configMapRef:
+                name: ekb-iceberg-catalog-config
+            - secretRef:
+                name: ekb-iceberg-objectstore-secret

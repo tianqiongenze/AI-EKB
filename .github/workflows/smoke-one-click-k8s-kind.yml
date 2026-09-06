@@ -1,0 +1,55 @@
+name: smoke-one-click-k8s-kind
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-k8s:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: python -m pip install --upgrade pip pyyaml grpcio-tools
+
+      - name: Set up kind
+        uses: helm/kind-action@v1.10.0
+
+      - name: Install Helm
+        run: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Build required local images for kind
+        run: |
+          docker build -t yadea-ekb:0.2.0 -f Dockerfile .
+          docker build -t yadea-ekb-flink-session:0.1.0 services/flink-session-image
+
+      - name: Load images into kind
+        run: |
+          kind load docker-image yadea-ekb:0.2.0
+          kind load docker-image yadea-ekb-flink-session:0.1.0
+
+      - name: Run one-click k8s smoke deploy
+        env:
+          AWS_ACCESS_KEY_ID: ci-smoke-ak
+          AWS_SECRET_ACCESS_KEY: ci-smoke-sk
+          FLINK_IMAGE_REPO: local
+          FLINK_IMAGE_TAG: 0.1.0
+          SKIP_BOOTSTRAP_DEPLOY_RUNTIME: "true"
+          SKIP_BOOTSTRAP_DEV_TOOLCHAIN: "true"
+        run: |
+          bash scripts/one_click_build_and_deploy.sh k8s
+
+      - name: Verify stack health
+        run: python scripts/verify_k8s_stack.py
+
+      - name: Cleanup kind artifacts
+        if: always()
+        run: kind delete cluster || true

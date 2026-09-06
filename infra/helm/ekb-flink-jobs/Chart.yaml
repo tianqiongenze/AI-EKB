@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ekb-flink-jobs
+description: Helm chart for EKB Flink session cluster and jobs
+type: application
+version: 0.1.0
+appVersion: "1.20.0"

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager
+  namespace: ekb-control-plane
+spec:
+  selector:
+    app: ekb-flink-jobmanager
+  ports:
+    - name: web-ui
+      protocol: TCP
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP

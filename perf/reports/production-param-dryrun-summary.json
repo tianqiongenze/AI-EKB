@@ -1,0 +1,97 @@
+{
+  "generated_at": 1775587276,
+  "namespace": "ekb-control-plane",
+  "status": "ok",
+  "results": [
+    {
+      "command": "helm lint /Users/joelgong/projects/AI- EKB/infra/helm/ekb-control-plane",
+      "returncode": 0,
+      "stdout": "==> Linting /Users/joelgong/projects/AI- EKB/infra/helm/ekb-control-plane\n[INFO] Chart.yaml: icon is recommended\n\n1 chart(s) linted, 0 chart(s) failed\n",
+      "stderr": ""
+    },
+    {
+      "command": "helm lint /Users/joelgong/projects/AI- EKB/infra/helm/ekb-flink-jobs",
+      "returncode": 0,
+      "stdout": "==> Linting /Users/joelgong/projects/AI- EKB/infra/helm/ekb-flink-jobs\n[INFO] Chart.yaml: icon is recommended\n\n1 chart(s) linted, 0 chart(s) failed\n",
+      "stderr": ""
+    },
+    {
+      "command": "helm template ekb-control-plane /Users/joelgong/projects/AI- EKB/infra/helm/ekb-control-plane --namespace ekb-control-plane --create-namespace",
+      "returncode": 0,
+      "stdout": "value: \"pulsar\"\n            - name: EKB_DB_DRIVER\n              value: \"tidb\"\n            - name: EKB_DB_PATH\n              value: \"/var/lib/ekb/control_plane.db\"\n            - name: EKB_TIDB_HOST\n              value: \"tidb-cluster-tidb\"\n            - name: EKB_TIDB_PORT\n              value: \"4000\"\n            - name: EKB_TIDB_USER\n              value: \"ekb_app\"\n            - name: EKB_TIDB_PASSWORD\n              valueFrom:\n                secretKeyRef:\n                  name: ekb-control-plane-secrets\n                  key: EKB_TIDB_PASSWORD\n            - name: EKB_TIDB_DATABASE\n              value: \"ekb_control_plane\"\n            - name: EKB_PULSAR_SERVICE_URL\n              value: \"pulsar://pulsar-broker:6650\"\n            - name: EKB_PULSAR_TOKEN\n              valueFrom:\n                secretKeyRef:\n                  name: ekb-control-plane-secrets\n                  key: EKB_PULSAR_TOKEN\n            - name: EKB_PULSAR_TLS_ENABLED\n              value: \"true\"\n            - name: EKB_PULSAR_CA_CERT_PATH\n              value: \"/etc/ssl/certs/pulsar-ca.crt\"\n            - name: EKB_REDIS_URL\n              value: \"redis://redis-cluster:6379/0\"\n            - name: EKB_REDIS_MAX_CONNECTIONS\n              value: \"500\"\n            - name: EKB_REDIS_SOCKET_TIMEOUT_SECONDS\n              value: \"0.2\"\n            - name: EKB_REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS\n              value: \"0.2\"\n            - name: EKB_NEO4J_URI\n              value: \"bolt://neo4j:7687\"\n            - name: EKB_NEO4J_USERNAME\n              value: \"ekb_reader_writer\"\n            - name: EKB_NEO4J_PASSWORD\n              valueFrom:\n                secretKeyRef:\n                  name: ekb-control-plane-secrets\n                  key: EKB_NEO4J_PASSWORD\n            - name: EKB_NEO4J_MAX_CONNECTION_POOL_SIZE\n              value: \"200\"\n            - name: EKB_MILVUS_URI\n              value: \"http://milvus:19530\"\n            - name: EKB_MILVUS_TOKEN\n              valueFrom:\n                secretKeyRef:\n                  name: ekb-control-plane-secrets\n                  key: EKB_MILVUS_TOKEN\n            - name: EKB_MILVUS_DB_NAME\n              value: \"ekb_prod\"\n            - name: EKB_AUTH_TOKEN\n              valueFrom:\n                secretKeyRef:\n                  name: ekb-control-plane-secrets\n                  key: EKB_AUTH_TOKEN\n            - name: EKB_MCP_RATE_LIMIT_PER_MINUTE\n              value: \"6000\"\n            - name: EKB_A2A_RATE_LIMIT_PER_MINUTE\n              value: \"12000\"\n            - name: EKB_TENANT_REGION_RATE_LIMITS\n              value: \"\"\n            - name: EKB_SUBAGENT_RETRY_MAX_ATTEMPTS\n              value: \"5\"\n            - name: EKB_SUBAGENT_RETRY_BASE_DELAY_MS\n              value: \"200\"\n            - name: EKB_SUBAGENT_RETRY_JITTER_MS\n              value: \"150\"\n            - name: EKB_SUBAGENT_DLQ_TOPIC_TEMPLATE\n              value: \"persistent://{tenant}/a2a-dlq/{region}/{sub_agent_type}\"\n            - name: EKB_A2A_ENABLED\n              value: \"false\"\n            - name: EKB_A2A_TOPIC\n              value: \"persistent://group/a2a/default\"\n            - name: EKB_A2A_SUBSCRIPTION\n              value: \"yadea-ekb-a2a\"\n          ports:\n            - containerPort: 8080\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: 8080\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 8080\n          resources:\n            limits:\n              cpu: \"2\"\n              memory: 2Gi\n            requests:\n              cpu: 500m\n              memory: 512Mi\n---\n# Source: yadea-ekb-control-plane/templates/hpa.yaml\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: ekb-control-plane-hpa\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: ekb-control-plane\n  minReplicas: 4\n  maxReplicas: 40\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: 65\n",
+      "stderr": ""
+    },
+    {
+      "command": "helm template ekb-flink-jobs /Users/joelgong/projects/AI- EKB/infra/helm/ekb-flink-jobs --namespace ekb-control-plane --set sessionCluster.image=ekb-mirror/yadea-ekb-flink-session:local --set credentials.awsAccessKeyId=dryrun-ak --set credentials.awsSecretAccessKey=dryrun-sk",
+      "returncode": 0,
+      "stdout": "ehouse/checkpoints/\n                state.savepoints.dir: s3a://ekb-lakehouse/savepoints/\n                execution.checkpointing.interval: 30000\n                execution.checkpointing.mode: EXACTLY_ONCE\n                iceberg.catalog.type: nessie\n                iceberg.catalog.uri: http://nessie.ekb-data.svc.cluster.local:19120/api/v1\n                iceberg.catalog.ref: main\n                iceberg.warehouse: s3a://ekb-lakehouse/warehouse\n                iceberg.io-impl: org.apache.iceberg.hadoop.HadoopFileIO\n                iceberg.lock-impl: org.apache.iceberg.aws.dynamodb.DynamoDbLockManager\n                iceberg.lock.table: ekb-iceberg-locks\n          envFrom:\n            - configMapRef:\n                name: ekb-flink-dataplane-config\n            - secretRef:\n                name: ekb-flink-jobs-flink-runtime-secret\n          resources:\n            limits:\n              cpu: \"2\"\n              memory: 4Gi\n            requests:\n              cpu: 500m\n              memory: 1Gi\n---\n# Source: ekb-flink-jobs/templates/taskmanager-deployment.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ekb-flink-jobs-taskmanager\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: ekb-flink-jobs-taskmanager\n  template:\n    metadata:\n      labels:\n        app: ekb-flink-jobs-taskmanager\n    spec:\n      containers:\n        - name: taskmanager\n          image: \"ekb-mirror/yadea-ekb-flink-session:local\"\n          args: [\"taskmanager\"]\n          env:\n            - name: FLINK_PROPERTIES\n              value: |\n                jobmanager.rpc.address: ekb-flink-jobs-jobmanager\n                taskmanager.numberOfTaskSlots: 8\n                state.backend: rocksdb\n                state.checkpoints.dir: s3a://ekb-lakehouse/checkpoints/\n                state.savepoints.dir: s3a://ekb-lakehouse/savepoints/\n                iceberg.catalog.type: nessie\n                iceberg.catalog.uri: http://nessie.ekb-data.svc.cluster.local:19120/api/v1\n                iceberg.catalog.ref: main\n                iceberg.warehouse: s3a://ekb-lakehouse/warehouse\n                iceberg.io-impl: org.apache.iceberg.hadoop.HadoopFileIO\n                iceberg.lock-impl: org.apache.iceberg.aws.dynamodb.DynamoDbLockManager\n                iceberg.lock.table: ekb-iceberg-locks\n          envFrom:\n            - configMapRef:\n                name: ekb-flink-dataplane-config\n            - secretRef:\n                name: ekb-flink-jobs-flink-runtime-secret\n          resources:\n            limits:\n              cpu: \"4\"\n              memory: 8Gi\n            requests:\n              cpu: 1000m\n              memory: 2Gi\n---\n# Source: ekb-flink-jobs/templates/batch-cronjob.yaml\napiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: ekb-flink-jobs-batch-quality-kpi\nspec:\n  schedule: \"*/30 * * * *\"\n  concurrencyPolicy: Forbid\n  successfulJobsHistoryLimit: 3\n  failedJobsHistoryLimit: 3\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          labels:\n            app: ekb-flink-jobs-flink-job\n        spec:\n          restartPolicy: OnFailure\n          containers:\n            - name: flink-runner\n              image: \"yadea-ekb-flink-jobs:0.1.0\"\n              command:\n                - /bin/sh\n                - -c\n                - >\n                  flink run\n                  -m ekb-flink-jobs-jobmanager:8081\n                  --detached\n                  --savepointPath s3a://ekb-lakehouse/savepoints/ekb-quality-kpi/\n                  --allowNonRestoredState\n                  -Dexecution.checkpointing.mode=EXACTLY_ONCE\n                  -Dstate.checkpoints.dir=s3a://ekb-lakehouse/checkpoints/\n                  -Dstate.savepoints.dir=s3a://ekb-lakehouse/savepoints/\n                  /opt/flink/jobs/ekb-quality-kpi.jar\n                  --source-topic persistent://group/connectors/normalized\n                  --sink-table ekb_gold_quality_kpi_daily\n              envFrom:\n                - configMapRef:\n                    name: ekb-flink-dataplane-config\n",
+      "stderr": ""
+    },
+    {
+      "command": "kubectl --request-timeout=30s apply -f /Users/joelgong/projects/AI- EKB/infra/k8s/base/namespace.yaml --dry-run=client",
+      "returncode": 0,
+      "stdout": "namespace/ekb-control-plane configured (dry run)\n",
+      "stderr": ""
+    },
+    {
+      "command": "kubectl --request-timeout=30s apply -f /Users/joelgong/projects/AI- EKB/infra/k8s/base/configmap.yaml --dry-run=client",
+      "returncode": 0,
+      "stdout": "configmap/ekb-control-plane-config configured (dry run)\n",
+      "stderr": ""
+    },
+    {
+      "command": "kubectl --request-timeout=30s apply -f /Users/joelgong/projects/AI- EKB/infra/k8s/base/deployment-ekb-control-plane.yaml --dry-run=client",
+      "returncode": 0,
+      "stdout": "deployment.apps/ekb-control-plane configured (dry run)\n",
+      "stderr": ""
+    },
+    {
+      "command": "kubectl --request-timeout=30s apply -f /Users/joelgong/projects/AI- EKB/infra/k8s/base/deployment-go-gateway.yaml --dry-run=client",
+      "returncode": 0,
+      "stdout": "deployment.apps/ekb-go-gateway configured (dry run)\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_contract_consistency.py",
+      "returncode": 0,
+      "stdout": "[contract-consistency] PASS\n- routes checked: 35\n- outbox event types checked: 17\n- a2a fields checked: 14\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_flink_runtime_preflight_contract.py",
+      "returncode": 0,
+      "stdout": "[flink-preflight-contract] PASS\n- dockerfile, preflight, and entrypoint are wired\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_replay_e2e_slo.py",
+      "returncode": 0,
+      "stdout": "[replay-e2e-slo-gate] PASS\n- relay p95: 350ms\n- relay p99: 700ms\n- a2a publish p95: 180ms\n- a2a publish p99: 350ms\n- sub-agent delegate p95: 250ms\n- sub-agent delegate p99: 500ms\n- http_req_failed rate: 0.005\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_gateway_slo.py",
+      "returncode": 0,
+      "stdout": "[gateway-slo-gate] PASS\n- gateway p95 threshold: 200ms\n- gateway p99 threshold: 400ms\n- policy max p95: 250ms\n- policy max p99: 500ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_gateway_perf_report.py",
+      "returncode": 0,
+      "stdout": "[gateway-perf-report] PASS\n- generated_at: 1775491606\n- gateway_latency_p95_ms: 4.0\n- gateway_latency_p99_ms: 6.0\n- http_req_failed_rate: 5e-06\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/check_forbidden_artifacts.py",
+      "returncode": 0,
+      "stdout": "[forbidden-artifacts] PASS\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/joelgong/projects/AI- EKB/.venv/bin/python /Users/joelgong/projects/AI- EKB/scripts/release_protect_artifacts.py --mode verify",
+      "returncode": 0,
+      "stdout": "[release-protect] mode=verify targets=36 manifest=dist/protected/manifest.json\n",
+      "stderr": ""
+    }
+  ]
+}

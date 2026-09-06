@@ -1,0 +1,18 @@
+{
+  "generated_at": 1775372676,
+  "results": [
+    {
+      "store": "neo4j",
+      "operation": "match_by_id",
+      "samples": 2000,
+      "ok": 2000,
+      "failed": 0,
+      "p50_ms": 5.868,
+      "p95_ms": 9.583,
+      "p99_ms": 26.102,
+      "avg_ms": 7.811,
+      "qps": 127.921,
+      "note": ""
+    }
+  ]
+}

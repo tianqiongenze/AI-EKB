@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+NODE=$(command -v node 2>/dev/null || true)
+if [ -z "$NODE" ]; then
+  if [ -x "$HOME/.nvm/versions/node/v25.5.0/bin/node" ]; then
+    NODE="$HOME/.nvm/versions/node/v25.5.0/bin/node"
+  fi
+fi
+EXEC="$HOME/.nvm/versions/node/v25.5.0/lib/node_modules/@cortexkit/opencode-magic-context/dist/index.js"
+if [ -z "${NODE-}" ]; then
+  echo "node not found" >&2; exit 127
+fi
+if [ ! -f "$EXEC" ]; then
+  echo "opencode-magic-context executor not found at $EXEC" >&2; exit 1
+fi
+exec "$NODE" "$EXEC" "$@"

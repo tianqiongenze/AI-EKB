@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekb-control-plane
+  namespace: ekb-control-plane
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: ekb-control-plane
+  template:
+    metadata:
+      labels:
+        app: ekb-control-plane
+    spec:
+      containers:
+        - name: api
+          image: yadea-ekb:0.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: ekb-control-plane-config
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"

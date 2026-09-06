@@ -1,0 +1,51 @@
+services:
+  redis:
+    image: ${REDIS_IMAGE:-ekb-mirror/redis:7}
+    ports:
+      - "6379:6379"
+
+  pulsar:
+    image: ${PULSAR_IMAGE:-ekb-mirror/pulsar:3.2.3}
+    command: ["/pulsar/bin/pulsar", "standalone"]
+    ports:
+      - "6650:6650"
+      - "8083:8080"
+
+  ekb-python-control-plane:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      EKB_DB_DRIVER: sqlite
+      EKB_DB_PATH: /tmp/ekb_control_plane.db
+      EKB_EVENT_PUBLISHER_BACKEND: pulsar
+      EKB_PULSAR_SERVICE_URL: pulsar://pulsar:6650
+      EKB_REDIS_URL: redis://redis:6379/0
+      EKB_AUTH_TOKEN: ""
+      EKB_MCP_RATE_LIMIT_PER_MINUTE: "6000"
+      EKB_A2A_RATE_LIMIT_PER_MINUTE: "12000"
+      EKB_A2A_ENABLED: "false"
+      EKB_A2A_TOPIC: persistent://group/a2a/default
+      EKB_A2A_SUBSCRIPTION: yadea-ekb-a2a
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - pulsar
+
+  ekb-go-gateway:
+    image: ${GOLANG_IMAGE:-ekb-mirror/golang:1.22}
+    working_dir: /workspace/services/go-gateway
+    command: go run .
+    environment:
+      EKB_GATEWAY_PULSAR_REQUIRED: "true"
+      EKB_PULSAR_SERVICE_URL: pulsar://pulsar:6650
+      EKB_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ..:/workspace
+    ports:
+      - "8090:8090"
+    depends_on:
+      - redis
+      - pulsar
+      - ekb-python-control-plane

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekb-go-gateway
+  namespace: ekb-control-plane
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: ekb-go-gateway
+  template:
+    metadata:
+      labels:
+        app: ekb-go-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: yadea-ekb-go-gateway:0.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+          env:
+            - name: SERVICE_NAME
+              value: go-dialogue-authz-gateway
+            - name: EKB_GATEWAY_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-control-plane-secrets
+                  key: EKB_AUTH_TOKEN
+            - name: EKB_GATEWAY_BACKEND_ROUTE_MAP
+              value: "python-dialogue-service=http://ekb-control-plane:8080,python-dialogue-service-canary=http://ekb-control-plane-canary:8080"
+            - name: EKB_GATEWAY_PULSAR_REQUIRED
+              value: "true"
+            - name: EKB_PULSAR_SERVICE_URL
+              value: "pulsar://pulsar-broker:6650"
+            - name: EKB_GATEWAY_PROXY_MAX_IDLE_CONNS
+              value: "4096"
+            - name: EKB_GATEWAY_PROXY_MAX_IDLE_CONNS_PER_HOST
+              value: "2048"
+            - name: EKB_GATEWAY_PROXY_MAX_CONNS_PER_HOST
+              value: "0"
+            - name: EKB_GATEWAY_PROXY_IDLE_CONN_TIMEOUT_SECONDS
+              value: "90"
+            - name: EKB_GATEWAY_GLOBAL_RATE_LIMIT_PER_MINUTE
+              value: "240000"
+            - name: EKB_GATEWAY_AUTHZ_RATE_LIMIT_PER_MINUTE
+              value: "180000"
+            - name: EKB_GATEWAY_ROUTE_RATE_LIMIT_PER_MINUTE
+              value: "180000"
+            - name: EKB_GATEWAY_MAX_INFLIGHT
+              value: "20000"
+            - name: EKB_GATEWAY_RETRY_MAX_ATTEMPTS
+              value: "3"
+            - name: EKB_GATEWAY_RETRY_BACKOFF_MS
+              value: "20"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8090
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8090
+            initialDelaySeconds: 8
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+            limits:
+              cpu: "4"
+              memory: "4Gi"

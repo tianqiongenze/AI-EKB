@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ekb-control-plane-pdb
+  namespace: ekb-control-plane
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ekb-control-plane

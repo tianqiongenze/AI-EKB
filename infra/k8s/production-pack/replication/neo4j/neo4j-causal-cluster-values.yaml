@@ -1,0 +1,22 @@
+neo4j:
+  name: ekb-neo4j
+  edition: enterprise
+  minimumClusterSize: 3
+
+core:
+  numberOfServers: 3
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+
+readReplica:
+  numberOfServers: 2
+
+config:
+  dbms.routing.enabled: "true"
+  dbms.cluster.raft.in_queue.max_batch: "128"
+  dbms.cluster.catchup.tx_pull_interval: "500ms"

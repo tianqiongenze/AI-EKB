@@ -1,0 +1,50 @@
+tiers:
+  - id: tier-0-canary
+    vus: 20
+    duration: 2m
+    failover: false
+    target:
+      error_rate_max: 0.002
+      p90_ms_max: 180
+      p95_ms_max: 250
+      p99_ms_max: 500
+
+  - id: tier-1-regional-baseline
+    vus: 80
+    duration: 8m
+    failover: false
+    target:
+      error_rate_max: 0.003
+      p90_ms_max: 260
+      p95_ms_max: 350
+      p99_ms_max: 800
+
+  - id: tier-2-regional-peak
+    vus: 200
+    duration: 15m
+    failover: false
+    target:
+      error_rate_max: 0.005
+      p90_ms_max: 360
+      p95_ms_max: 500
+      p99_ms_max: 1200
+
+  - id: tier-3-multiregion-failover
+    vus: 300
+    duration: 12m
+    failover: true
+    target:
+      error_rate_max: 0.008
+      p90_ms_max: 520
+      p95_ms_max: 700
+      p99_ms_max: 1600
+
+  - id: tier-4-global-stress-sim
+    vus: 600
+    duration: 20m
+    failover: true
+    target:
+      error_rate_max: 0.015
+      p90_ms_max: 760
+      p95_ms_max: 1000
+      p99_ms_max: 2200

@@ -1,0 +1,79 @@
+replicaCount: 4
+
+image:
+  repository: yadea-ekb
+  tag: "0.2.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+hpa:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 40
+  cpuAverageUtilization: 65
+
+pdb:
+  minAvailable: 2
+
+config:
+  env: production
+  defaultRegion: cn-north-1
+  enableAudit: "true"
+  eventPublisherBackend: pulsar
+  dbDriver: tidb
+  dbPath: /var/lib/ekb/control_plane.db
+  tidbHost: tidb-cluster-tidb
+  tidbPort: "4000"
+  tidbUser: ekb_app
+  tidbDatabase: ekb_control_plane
+  pulsarServiceUrl: pulsar://pulsar-broker:6650
+  pulsarTlsEnabled: "true"
+  pulsarCaCertPath: /etc/ssl/certs/pulsar-ca.crt
+  redisUrl: redis://redis-cluster:6379/0
+  redisMaxConnections: "500"
+  redisSocketTimeoutSeconds: "0.2"
+  redisSocketConnectTimeoutSeconds: "0.2"
+  neo4jUri: bolt://neo4j:7687
+  neo4jUsername: ekb_reader_writer
+  neo4jMaxConnectionPoolSize: "200"
+  milvusUri: http://milvus:19530
+  milvusDbName: ekb_prod
+  authToken: ""
+  mcpRateLimitPerMinute: "6000"
+  a2aRateLimitPerMinute: "12000"
+  tenantRegionRateLimits: ""
+  subagentRetryMaxAttempts: "5"
+  subagentRetryBaseDelayMs: "200"
+  subagentRetryJitterMs: "150"
+  subagentDlqTopicTemplate: "persistent://{tenant}/a2a-dlq/{region}/{sub_agent_type}"
+  a2aEnabled: "false"
+  a2aTopic: persistent://group/a2a/default
+  a2aSubscription: yadea-ekb-a2a
+
+gateway:
+  backendRouteMap: "python-dialogue-service=http://ekb-control-plane:8080,python-dialogue-service-canary=http://ekb-control-plane-canary:8080"
+  proxyMaxIdleConns: "4096"
+  proxyMaxIdleConnsPerHost: "2048"
+  proxyMaxConnsPerHost: "0"
+  proxyIdleConnTimeoutSeconds: "90"
+
+secrets:
+  enabled: true
+  name: ekb-control-plane-secrets
+  tidbPassword: ""
+  pulsarToken: ""
+  neo4jPassword: ""
+  milvusToken: ""
+  authToken: ""

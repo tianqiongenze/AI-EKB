@@ -1,0 +1,42 @@
+{
+  "generated_at": 1775517626,
+  "stores": [
+    {
+      "store": "tidb",
+      "target": 1000000,
+      "inserted": 1000000,
+      "seconds": 239.423,
+      "qps": 4176.7,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "store": "redis",
+      "target": 1000000,
+      "inserted": 1000000,
+      "seconds": 11.87,
+      "qps": 84245.23,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "store": "neo4j",
+      "target": 1000000,
+      "inserted": 1000000,
+      "seconds": 83.008,
+      "qps": 12047.06,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "store": "milvus",
+      "target": 1000000,
+      "inserted": 1000000,
+      "seconds": 122.496,
+      "qps": 8163.54,
+      "status": "ok",
+      "note": ""
+    }
+  ],
+  "all_ok": true
+}

@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ENV
+              value: {{ .Values.config.env | quote }}
+            - name: DEFAULT_REGION
+              value: {{ .Values.config.defaultRegion | quote }}
+            - name: ENABLE_AUDIT
+              value: {{ .Values.config.enableAudit | quote }}
+            - name: EKB_EVENT_PUBLISHER_BACKEND
+              value: {{ .Values.config.eventPublisherBackend | quote }}
+            - name: EKB_DB_DRIVER
+              value: {{ .Values.config.dbDriver | quote }}
+            - name: EKB_DB_PATH
+              value: {{ .Values.config.dbPath | quote }}
+            - name: EKB_TIDB_HOST
+              value: {{ .Values.config.tidbHost | quote }}
+            - name: EKB_TIDB_PORT
+              value: {{ .Values.config.tidbPort | quote }}
+            - name: EKB_TIDB_USER
+              value: {{ .Values.config.tidbUser | quote }}
+            - name: EKB_TIDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.name }}
+                  key: EKB_TIDB_PASSWORD
+            - name: EKB_TIDB_DATABASE
+              value: {{ .Values.config.tidbDatabase | quote }}
+            - name: EKB_PULSAR_SERVICE_URL
+              value: {{ .Values.config.pulsarServiceUrl | quote }}
+            - name: EKB_PULSAR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.name }}
+                  key: EKB_PULSAR_TOKEN
+            - name: EKB_PULSAR_TLS_ENABLED
+              value: {{ .Values.config.pulsarTlsEnabled | quote }}
+            - name: EKB_PULSAR_CA_CERT_PATH
+              value: {{ .Values.config.pulsarCaCertPath | quote }}
+            - name: EKB_REDIS_URL
+              value: {{ .Values.config.redisUrl | quote }}
+            - name: EKB_REDIS_MAX_CONNECTIONS
+              value: {{ .Values.config.redisMaxConnections | quote }}
+            - name: EKB_REDIS_SOCKET_TIMEOUT_SECONDS
+              value: {{ .Values.config.redisSocketTimeoutSeconds | quote }}
+            - name: EKB_REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS
+              value: {{ .Values.config.redisSocketConnectTimeoutSeconds | quote }}
+            - name: EKB_NEO4J_URI
+              value: {{ .Values.config.neo4jUri | quote }}
+            - name: EKB_NEO4J_USERNAME
+              value: {{ .Values.config.neo4jUsername | quote }}
+            - name: EKB_NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.name }}
+                  key: EKB_NEO4J_PASSWORD
+            - name: EKB_NEO4J_MAX_CONNECTION_POOL_SIZE
+              value: {{ .Values.config.neo4jMaxConnectionPoolSize | quote }}
+            - name: EKB_MILVUS_URI
+              value: {{ .Values.config.milvusUri | quote }}
+            - name: EKB_MILVUS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.name }}
+                  key: EKB_MILVUS_TOKEN
+            - name: EKB_MILVUS_DB_NAME
+              value: {{ .Values.config.milvusDbName | quote }}
+            - name: EKB_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.name }}
+                  key: EKB_AUTH_TOKEN
+            - name: EKB_MCP_RATE_LIMIT_PER_MINUTE
+              value: {{ .Values.config.mcpRateLimitPerMinute | quote }}
+            - name: EKB_A2A_RATE_LIMIT_PER_MINUTE
+              value: {{ .Values.config.a2aRateLimitPerMinute | quote }}
+            - name: EKB_TENANT_REGION_RATE_LIMITS
+              value: {{ .Values.config.tenantRegionRateLimits | quote }}
+            - name: EKB_SUBAGENT_RETRY_MAX_ATTEMPTS
+              value: {{ .Values.config.subagentRetryMaxAttempts | quote }}
+            - name: EKB_SUBAGENT_RETRY_BASE_DELAY_MS
+              value: {{ .Values.config.subagentRetryBaseDelayMs | quote }}
+            - name: EKB_SUBAGENT_RETRY_JITTER_MS
+              value: {{ .Values.config.subagentRetryJitterMs | quote }}
+            - name: EKB_SUBAGENT_DLQ_TOPIC_TEMPLATE
+              value: {{ .Values.config.subagentDlqTopicTemplate | quote }}
+            - name: EKB_A2A_ENABLED
+              value: {{ .Values.config.a2aEnabled | quote }}
+            - name: EKB_A2A_TOPIC
+              value: {{ .Values.config.a2aTopic | quote }}
+            - name: EKB_A2A_SUBSCRIPTION
+              value: {{ .Values.config.a2aSubscription | quote }}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-minio
+  namespace: ekb-control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus-minio
+  template:
+    metadata:
+      labels:
+        app: milvus-minio
+    spec:
+      containers:
+        - name: minio
+          image: docker.io/minio/minio:RELEASE.2024-05-28T17-19-04Z
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          command:
+            - minio
+            - server
+            - /data
+            - --console-address
+            - :9001
+          env:
+            - name: MINIO_ROOT_USER
+              value: minioadmin
+            - name: MINIO_ROOT_PASSWORD
+              value: minioadmin
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          readinessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          startupProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-minio
+  namespace: ekb-control-plane
+spec:
+  selector:
+    app: milvus-minio
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus
+  namespace: ekb-control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus
+  template:
+    metadata:
+      labels:
+        app: milvus
+    spec:
+      containers:
+        - name: milvus
+          image: docker.io/milvusdb/milvus:v2.5.0
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "3"
+              memory: 6Gi
+          command: ["milvus", "run", "standalone"]
+          env:
+            - name: ETCD_USE_EMBED
+              value: "true"
+            - name: ETCD_DATA_DIR
+              value: /var/lib/milvus/etcd
+            - name: MINIO_ADDRESS
+              value: milvus-minio:9000
+            - name: MINIO_ACCESS_KEY_ID
+              value: minioadmin
+            - name: MINIO_SECRET_ACCESS_KEY
+              value: minioadmin
+            - name: MINIO_USE_SSL
+              value: "false"
+          ports:
+            - containerPort: 19530
+            - containerPort: 9091
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9091
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9091
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 6
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 9091
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 90
+          volumeMounts:
+            - name: milvus-data
+              mountPath: /var/lib/milvus
+      volumes:
+        - name: milvus-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus
+  namespace: ekb-control-plane
+spec:
+  selector:
+    app: milvus
+  ports:
+    - name: grpc
+      port: 19530
+      targetPort: 19530
+    - name: health
+      port: 9091
+      targetPort: 9091

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ekb.contracts;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "yadea-ekb-go-gateway;main";
+
+service CapabilityGatewayService {
+  rpc EvaluatePolicy(google.protobuf.Struct) returns (google.protobuf.Struct);
+  rpc AggregateInsights(google.protobuf.Struct) returns (google.protobuf.Struct);
+  rpc GovernanceDecision(google.protobuf.Struct) returns (google.protobuf.Struct);
+}

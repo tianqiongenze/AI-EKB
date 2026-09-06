@@ -1,0 +1,57 @@
+{
+  "generated_at": 1775517645,
+  "results": [
+    {
+      "store": "tidb",
+      "operation": "select_by_key",
+      "samples": 500,
+      "ok": 500,
+      "failed": 0,
+      "p50_ms": 1.945,
+      "p95_ms": 2.744,
+      "p99_ms": 3.669,
+      "avg_ms": 2.007,
+      "qps": 497.239,
+      "note": ""
+    },
+    {
+      "store": "redis",
+      "operation": "get",
+      "samples": 500,
+      "ok": 500,
+      "failed": 0,
+      "p50_ms": 0.503,
+      "p95_ms": 0.661,
+      "p99_ms": 2.248,
+      "avg_ms": 0.552,
+      "qps": 1806.751,
+      "note": ""
+    },
+    {
+      "store": "neo4j",
+      "operation": "match_by_id",
+      "samples": 500,
+      "ok": 500,
+      "failed": 0,
+      "p50_ms": 3.69,
+      "p95_ms": 4.945,
+      "p99_ms": 7.347,
+      "avg_ms": 4.169,
+      "qps": 239.557,
+      "note": ""
+    },
+    {
+      "store": "milvus",
+      "operation": "vector_search",
+      "samples": 500,
+      "ok": 500,
+      "failed": 0,
+      "p50_ms": 0.46,
+      "p95_ms": 0.617,
+      "p99_ms": 0.72,
+      "avg_ms": 28.891,
+      "qps": 34.613,
+      "note": ""
+    }
+  ]
+}

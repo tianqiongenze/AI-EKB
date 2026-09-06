@@ -1,0 +1,57 @@
+{
+  "generated_at": 1775583280,
+  "mode": "lightweight-app-plane-multiactive",
+  "environments": [
+    "dev",
+    "staging",
+    "prod"
+  ],
+  "results": [
+    {
+      "environment": "dev",
+      "regions": [
+        {
+          "namespace": "ekb-dev-region-a",
+          "control_plane": "ready",
+          "gateway": "ready"
+        },
+        {
+          "namespace": "ekb-dev-region-b",
+          "control_plane": "ready",
+          "gateway": "ready"
+        }
+      ]
+    },
+    {
+      "environment": "staging",
+      "regions": [
+        {
+          "namespace": "ekb-staging-region-a",
+          "control_plane": "ready",
+          "gateway": "ready"
+        },
+        {
+          "namespace": "ekb-staging-region-b",
+          "control_plane": "ready",
+          "gateway": "ready"
+        }
+      ]
+    },
+    {
+      "environment": "prod",
+      "regions": [
+        {
+          "namespace": "ekb-prod-region-a",
+          "control_plane": "ready",
+          "gateway": "ready"
+        },
+        {
+          "namespace": "ekb-prod-region-b",
+          "control_plane": "ready",
+          "gateway": "ready"
+        }
+      ]
+    }
+  ],
+  "status": "ok"
+}

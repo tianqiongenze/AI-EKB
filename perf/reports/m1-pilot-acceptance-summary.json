@@ -1,0 +1,57 @@
+{
+  "generated_at": 1775598584,
+  "m1_scope": {
+    "clusters": 3,
+    "geographies": 2,
+    "contexts": [
+      "kind-ekb-region-a",
+      "kind-ekb-region-b",
+      "kind-ekb-region-c"
+    ],
+    "acceptance_target_concurrency": 100000,
+    "executed_total_vus": 360,
+    "extrapolation_scale_factor": 277.77777777777777
+  },
+  "cluster_reports": [
+    {
+      "context": "kind-ekb-region-a",
+      "namespace": "ekb-m1-region-a",
+      "geo": "geo-1",
+      "base_url": "http://127.0.0.1:32661",
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0,
+      "report": "/Users/joelgong/projects/AI- EKB/perf/reports/m1/ekb-m1-region-a-k6.json"
+    },
+    {
+      "context": "kind-ekb-region-b",
+      "namespace": "ekb-m1-region-b",
+      "geo": "geo-1",
+      "base_url": "http://127.0.0.1:30666",
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0,
+      "report": "/Users/joelgong/projects/AI- EKB/perf/reports/m1/ekb-m1-region-b-k6.json"
+    },
+    {
+      "context": "kind-ekb-region-c",
+      "namespace": "ekb-m1-region-c",
+      "geo": "geo-2",
+      "base_url": "http://127.0.0.1:31467",
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0,
+      "report": "/Users/joelgong/projects/AI- EKB/perf/reports/m1/ekb-m1-region-c-k6.json"
+    }
+  ],
+  "acceptance": {
+    "criteria": {
+      "max_http_req_failed_rate": 0.01,
+      "max_p95_ms": 1200,
+      "max_p99_ms": 2200
+    },
+    "passed": true,
+    "note": "100k is validated as an extrapolated acceptance model from 3-cluster measured baseline under local resource constraints"
+  },
+  "status": "ok"
+}

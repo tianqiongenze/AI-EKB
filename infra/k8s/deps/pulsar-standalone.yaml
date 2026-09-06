@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-broker
+  namespace: ekb-control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulsar-broker
+  template:
+    metadata:
+      labels:
+        app: pulsar-broker
+    spec:
+      containers:
+        - name: pulsar
+          image: docker.io/apachepulsar/pulsar:3.2.3
+          command: ["/pulsar/bin/pulsar", "standalone"]
+          ports:
+            - containerPort: 6650
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 6650
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsar-broker
+  namespace: ekb-control-plane
+spec:
+  selector:
+    app: pulsar-broker
+  ports:
+    - name: broker
+      port: 6650
+      targetPort: 6650
+    - name: admin
+      port: 8080
+      targetPort: 8080

@@ -1,0 +1,7 @@
+resources:
+  - namespace.yaml
+  - pulsar-standalone.yaml
+  - redis.yaml
+  - neo4j.yaml
+  - milvus.yaml
+  - tidb-lite.yaml

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ekb-control-plane-config
+  namespace: ekb-control-plane
+data:
+  ENV: production
+  DEFAULT_REGION: cn-north-1
+  ENABLE_AUDIT: "true"
+  EKB_TENANT_REGION_RATE_LIMITS: "group:cn-north-1=12000,group:eu-central-1=10000"
+  EKB_SUBAGENT_RETRY_MAX_ATTEMPTS: "5"
+  EKB_SUBAGENT_RETRY_BASE_DELAY_MS: "200"
+  EKB_SUBAGENT_RETRY_JITTER_MS: "150"
+  EKB_SUBAGENT_DLQ_TOPIC_TEMPLATE: "persistent://{tenant}/a2a-dlq/{region}/{sub_agent_type}"
+  EKB_NEO4J_PASSWORD: "neo4j-password-1"

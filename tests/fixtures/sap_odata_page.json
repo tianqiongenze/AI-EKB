@@ -1,0 +1,17 @@
+{
+  "@odata.context": "https://sap.example/odata/$metadata#A_BusinessPartner",
+  "@odata.nextLink": "https://sap.example/odata/A_BusinessPartner?$skiptoken=2",
+  "@odata.deltaLink": "https://sap.example/odata/A_BusinessPartner?$deltatoken=abc123",
+  "value": [
+    {
+      "BusinessPartner": "1000001",
+      "LastChangeDateTime": "2026-03-30T08:10:00Z",
+      "Name": "Yadea Supplier A"
+    },
+    {
+      "BusinessPartner": "1000002",
+      "LastChangeDateTime": "2026-03-30T08:12:00Z",
+      "Name": "Yadea Supplier B"
+    }
+  ]
+}

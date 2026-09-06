@@ -1,0 +1,19 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: HealthCheckPolicy
+metadata:
+  name: ekb-global-health-policy
+  namespace: ekb-control-plane
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: ekb-global-route
+  default:
+    intervalSeconds: 5
+    timeoutSeconds: 2
+    healthyThreshold: 2
+    unhealthyThreshold: 2
+    http:
+      path: /healthz
+      expectedStatusCodes:
+        - 200

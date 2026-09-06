@@ -1,0 +1,86 @@
+version: "1.0"
+owner: "ekb-platform"
+description: "Iceberg table contract for lakehouse bronze/silver/gold layers"
+
+tables:
+  - name: ekb_bronze_connector_events
+    format: iceberg
+    layer: bronze
+    source_topic: persistent://group/connectors/raw
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [connector_system, idempotency_key]
+    retention_days: 90
+    compaction:
+      strategy: binpack
+      target_file_size_mb: 512
+    snapshot_expiration_days: 14
+    schema_evolution_policy: additive_only
+
+  - name: ekb_bronze_agent_events
+    format: iceberg
+    layer: bronze
+    source_topic: persistent://group/a2a/raw
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [message_id]
+    retention_days: 90
+    compaction:
+      strategy: binpack
+      target_file_size_mb: 512
+    snapshot_expiration_days: 14
+    schema_evolution_policy: additive_only
+
+  - name: ekb_silver_connector_events_clean
+    format: iceberg
+    layer: silver
+    source_topic: persistent://group/connectors/normalized
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [connector_system, idempotency_key]
+    retention_days: 180
+    compaction:
+      strategy: sort
+      sort_order: [tenant_id, region_id, event_date]
+      target_file_size_mb: 512
+    snapshot_expiration_days: 30
+    schema_evolution_policy: additive_only
+
+  - name: ekb_silver_agent_task_outcomes
+    format: iceberg
+    layer: silver
+    source_topic: persistent://group/a2a/normalized
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [task_id]
+    retention_days: 180
+    compaction:
+      strategy: sort
+      sort_order: [tenant_id, region_id, event_date]
+      target_file_size_mb: 512
+    snapshot_expiration_days: 30
+    schema_evolution_policy: additive_only
+
+  - name: ekb_gold_quality_kpi_daily
+    format: iceberg
+    layer: gold
+    source_topic: persistent://group/analytics/quality-kpi
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [tenant_id, region_id, plant_id, event_date]
+    retention_days: 1095
+    compaction:
+      strategy: sort
+      sort_order: [tenant_id, region_id, plant_id, event_date]
+      target_file_size_mb: 256
+    snapshot_expiration_days: 60
+    schema_evolution_policy: additive_only
+
+  - name: ekb_gold_agent_governance_kpi_hourly
+    format: iceberg
+    layer: gold
+    source_topic: persistent://group/analytics/agent-governance-kpi
+    partition_fields: [tenant_id, region_id, event_date]
+    primary_keys: [tenant_id, region_id, event_hour]
+    retention_days: 730
+    compaction:
+      strategy: sort
+      sort_order: [tenant_id, region_id, event_date]
+      target_file_size_mb: 256
+    snapshot_expiration_days: 60
+    schema_evolution_policy: additive_only

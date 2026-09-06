@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-taskmanager
+spec:
+  replicas: {{ .Values.sessionCluster.taskmanagerReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-taskmanager
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-taskmanager
+    spec:
+      containers:
+        - name: taskmanager
+          image: {{ .Values.sessionCluster.image | quote }}
+          args: ["taskmanager"]
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: {{ .Release.Name }}-jobmanager
+                taskmanager.numberOfTaskSlots: {{ .Values.sessionCluster.taskSlots }}
+                state.backend: rocksdb
+                state.checkpoints.dir: {{ .Values.sessionCluster.checkpointDir }}
+                state.savepoints.dir: {{ .Values.sessionCluster.savepointDir }}
+                iceberg.catalog.type: {{ .Values.iceberg.catalogType }}
+                iceberg.catalog.uri: {{ .Values.iceberg.catalogUri }}
+                iceberg.catalog.ref: {{ .Values.iceberg.ref }}
+                iceberg.warehouse: {{ .Values.iceberg.warehouseUri }}
+                iceberg.io-impl: {{ .Values.iceberg.ioImpl }}
+                iceberg.lock-impl: {{ .Values.iceberg.lockImpl }}
+                iceberg.lock.table: {{ .Values.iceberg.lockTable }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMapName }}
+            - secretRef:
+                name: {{ .Release.Name }}-flink-runtime-secret
+          resources:
+{{ toYaml .Values.sessionCluster.resources.taskmanager | indent 12 }}

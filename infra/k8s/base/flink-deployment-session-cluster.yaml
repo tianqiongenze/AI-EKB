@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekb-flink-jobmanager
+  namespace: ekb-control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ekb-flink-jobmanager
+  template:
+    metadata:
+      labels:
+        app: ekb-flink-jobmanager
+    spec:
+      containers:
+        - name: jobmanager
+          image: yadea-ekb-flink-session:0.1.0
+          args: ["jobmanager"]
+          ports:
+            - containerPort: 8081
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: flink-jobmanager
+                state.backend: rocksdb
+                state.checkpoints.dir: s3a://ekb-lakehouse/checkpoints/
+                state.savepoints.dir: s3a://ekb-lakehouse/savepoints/
+                execution.checkpointing.interval: 30000
+                execution.checkpointing.mode: EXACTLY_ONCE
+          envFrom:
+            - configMapRef:
+                name: ekb-flink-dataplane-config
+            - configMapRef:
+                name: ekb-iceberg-catalog-config
+            - secretRef:
+                name: ekb-iceberg-objectstore-secret

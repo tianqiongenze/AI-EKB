@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-cross-region-replication
+  namespace: ekb-control-plane
+data:
+  redis.conf: |
+    replica-read-only yes
+    repl-diskless-sync yes
+    repl-backlog-size 256mb
+    min-replicas-to-write 1
+    min-replicas-max-lag 10

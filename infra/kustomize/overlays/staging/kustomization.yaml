@@ -1,0 +1,14 @@
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: ekb-control-plane
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "300m"

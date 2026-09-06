@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pulsar-geo-replication-policy
+  namespace: ekb-control-plane
+data:
+  policy.yaml: |
+    clusters:
+      - cn-north-1
+      - eu-central-1
+    tenants:
+      group:
+        allowedClusters:
+          - cn-north-1
+          - eu-central-1
+    namespaces:
+      group/a2a:
+        replicationClusters:
+          - cn-north-1
+          - eu-central-1

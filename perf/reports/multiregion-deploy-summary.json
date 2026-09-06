@@ -1,0 +1,17 @@
+{
+  "generated_at": 1775536567,
+  "cluster": "ekb-multiregion",
+  "regions": [
+    {
+      "name": "cn-north-1",
+      "namespace": "ekb-region-a"
+    },
+    {
+      "name": "eu-central-1",
+      "namespace": "ekb-region-b"
+    }
+  ],
+  "replicas_per_deployment": 1,
+  "seconds": 637.905,
+  "status": "ok"
+}

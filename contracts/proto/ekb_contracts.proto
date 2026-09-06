@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package ekb.contracts;
+
+option java_package = "com.enterprise.ekb.contracts.proto";
+option java_multiple_files = true;
+option java_outer_classname = "EkbContractsProto";
+
+import "google/protobuf/struct.proto";
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+}
+
+message KGraphReasonRequest {
+  string tenant_id = 1;
+  string plant_id = 2;
+  string query = 3;
+  repeated string evidence_refs = 4;
+}
+
+message KGraphReasonResponse {
+  string tenant_id = 1;
+  string plant_id = 2;
+  string engine = 3;
+  repeated string results = 4;
+}
+
+service CapabilityGatewayService {
+  rpc EvaluatePolicy(google.protobuf.Struct) returns (google.protobuf.Struct);
+  rpc AggregateInsights(google.protobuf.Struct) returns (google.protobuf.Struct);
+  rpc GovernanceDecision(google.protobuf.Struct) returns (google.protobuf.Struct);
+}

@@ -1,0 +1,704 @@
+{
+  "generated_at": 1775992431,
+  "mode": "m2-local-simulation-rancher-desktop",
+  "target": {
+    "clouds": 3,
+    "geographies": 2,
+    "non_extrapolated_requests": 100000,
+    "stability_hours": 24
+  },
+  "partitions": [
+    {
+      "cloud": "aws",
+      "region": "us-east-1",
+      "geo": "geo-1",
+      "namespace": "ekb-m2-aws-us-east-1"
+    },
+    {
+      "cloud": "gcp",
+      "region": "europe-west1",
+      "geo": "geo-1",
+      "namespace": "ekb-m2-gcp-europe-west1"
+    },
+    {
+      "cloud": "azure",
+      "region": "eastasia",
+      "geo": "geo-2",
+      "namespace": "ekb-m2-azure-eastasia"
+    }
+  ],
+  "load_reports": [
+    {
+      "cloud": "aws",
+      "region": "us-east-1",
+      "geo": "geo-1",
+      "namespace": "ekb-m2-aws-us-east-1",
+      "base_url": "http://127.0.0.1:32510",
+      "iterations": 33333,
+      "http_reqs_count": 33333.0,
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 12.290399999999998,
+      "p99_ms": 19.283759999999997
+    },
+    {
+      "cloud": "gcp",
+      "region": "europe-west1",
+      "geo": "geo-1",
+      "namespace": "ekb-m2-gcp-europe-west1",
+      "base_url": "http://127.0.0.1:30551",
+      "iterations": 33333,
+      "http_reqs_count": 33333.0,
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 11.389,
+      "p99_ms": 14.426439999999998
+    },
+    {
+      "cloud": "azure",
+      "region": "eastasia",
+      "geo": "geo-2",
+      "namespace": "ekb-m2-azure-eastasia",
+      "base_url": "http://127.0.0.1:30496",
+      "iterations": 33334,
+      "http_reqs_count": 33334.0,
+      "http_req_failed_rate": 0.16496670066598668,
+      "p95_ms": 1748.4457,
+      "p99_ms": 1851.09102
+    }
+  ],
+  "total_requests_observed": 100000,
+  "traffic_cells": [
+    {
+      "namespace": "ekb-m2-aws-us-east-1",
+      "cloud": "aws",
+      "geo": "geo-1",
+      "requests_observed": 33333,
+      "non_zero": true
+    },
+    {
+      "namespace": "ekb-m2-gcp-europe-west1",
+      "cloud": "gcp",
+      "geo": "geo-1",
+      "requests_observed": 33333,
+      "non_zero": true
+    },
+    {
+      "namespace": "ekb-m2-azure-eastasia",
+      "cloud": "azure",
+      "geo": "geo-2",
+      "requests_observed": 33334,
+      "non_zero": true
+    }
+  ],
+  "observability": {
+    "zero_fail_upper_bound_95": 2.995732273553991e-05,
+    "note": "for zero observed failures, upper bound approximated as -ln(0.05)/N"
+  },
+  "stability_simulation": {
+    "simulated_hours": 24,
+    "passed": true,
+    "records": [
+      {
+        "simulated_hour": 1,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 2,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 3,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 4,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 5,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 6,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 7,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 8,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 9,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 10,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 11,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 12,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 13,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 14,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 15,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 16,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 17,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 18,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 19,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 20,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 21,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 22,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 23,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "simulated_hour": 24,
+        "checks": [
+          {
+            "namespace": "ekb-m2-aws-us-east-1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-gcp-europe-west1",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          },
+          {
+            "namespace": "ekb-m2-azure-eastasia",
+            "control_plane": "1/1",
+            "gateway": "1/1",
+            "ok": true
+          }
+        ]
+      }
+    ]
+  },
+  "failover": {
+    "trials": [
+      {
+        "trial": 1,
+        "rto_seconds": 95.88784003257751,
+        "http_req_failed_rate": 0.0,
+        "p95_ms": 1016.4667000000001
+      },
+      {
+        "trial": 2,
+        "rto_seconds": 95.48207306861877,
+        "http_req_failed_rate": 0.0,
+        "p95_ms": 1010.81305
+      },
+      {
+        "trial": 3,
+        "rto_seconds": 94.4138810634613,
+        "http_req_failed_rate": 0.0,
+        "p95_ms": 1004.65605
+      }
+    ],
+    "failover_trial_count": 3,
+    "rto_seconds": 95.48207306861877,
+    "rto_distribution": {
+      "min": 94.4138810634613,
+      "median": 95.48207306861877,
+      "max": 95.88784003257751
+    },
+    "rpo_seconds": 0,
+    "rpo_definition": "local simulation is stateless for /healthz path; no persisted write loss expected",
+    "failover_http_req_failed_rate": 0.0,
+    "failover_p95_ms": 1016.4667000000001
+  },
+  "acceptance": {
+    "criteria": {
+      "max_http_req_failed_rate": 0.01,
+      "max_p95_ms": 1200,
+      "max_p99_ms": 2200,
+      "max_rto_seconds": 300
+    },
+    "criteria_evaluation": {
+      "traffic_non_extrapolated_100k": true,
+      "per_partition_error_p95_p99": false,
+      "simulated_24h_stability": true,
+      "failover_rto": true,
+      "failover_error_rate": true
+    },
+    "passed": false
+  },
+  "status": "degraded"
+}

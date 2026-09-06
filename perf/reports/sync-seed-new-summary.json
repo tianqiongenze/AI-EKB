@@ -1,0 +1,42 @@
+{
+  "generated_at": 1775552395,
+  "stores": [
+    {
+      "store": "tidb",
+      "target": 200000,
+      "inserted": 200000,
+      "seconds": 155.069,
+      "qps": 1289.75,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "store": "redis",
+      "target": 200000,
+      "inserted": 200000,
+      "seconds": 6.035,
+      "qps": 33141.92,
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "store": "neo4j",
+      "target": 200000,
+      "inserted": 55000,
+      "seconds": 181.345,
+      "qps": 303.29,
+      "status": "failed",
+      "note": "Couldn't connect to 127.0.0.1:17687 (resolved to ('127.0.0.1:17687',)):\nFailed to establish connection to ResolvedIPv4Address(('127.0.0.1', 17687)) (reason [Errno 61] Connection refused)"
+    },
+    {
+      "store": "milvus",
+      "target": 200000,
+      "inserted": 200000,
+      "seconds": 73.717,
+      "qps": 2713.08,
+      "status": "ok",
+      "note": ""
+    }
+  ],
+  "all_ok": false
+}

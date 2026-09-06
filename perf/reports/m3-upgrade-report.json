@@ -1,0 +1,69 @@
+{
+  "generated_at": 1775888938,
+  "goal": {
+    "target_users": 10000000000,
+    "target_concurrent": 1000000
+  },
+  "strict_m3": true,
+  "runs": {
+    "m2": {
+      "exit_code": 0,
+      "stdout_tail": [
+        "/Users/joelgong/projects/AI- EKB/perf/reports/m2-rancher-sim-acceptance.json"
+      ],
+      "stderr_tail": []
+    },
+    "m3_data_plane": {
+      "exit_code": 1,
+      "stdout_tail": [],
+      "stderr_tail": [
+        "Traceback (most recent call last):",
+        "  File \"/Users/joelgong/projects/AI- EKB/scripts/pulsar_bulk_ingest_sync_and_load.py\", line 588, in <module>",
+        "    raise SystemExit(main())",
+        "  File \"/Users/joelgong/projects/AI- EKB/scripts/pulsar_bulk_ingest_sync_and_load.py\", line 480, in main",
+        "    ensure_data_plane(ns)",
+        "  File \"/Users/joelgong/projects/AI- EKB/scripts/pulsar_bulk_ingest_sync_and_load.py\", line 220, in ensure_data_plane",
+        "    raise RuntimeError(f\"deployment {deploy} in {namespace} not ready: {reason}\")",
+        "RuntimeError: deployment milvus in ekb-m2-aws-us-east-1 not ready: rollout-timeout"
+      ]
+    }
+  },
+  "coverage": {
+    "service_layers": {
+      "gateway_healthz": true,
+      "route_api": true,
+      "mcp_invoke": true,
+      "relay": true
+    },
+    "data_layers": {
+      "a2a_publish": true,
+      "subagent_delegate": true,
+      "pulsar_topic_sync": true
+    }
+  },
+  "compliance": {
+    "m2_status": "ok",
+    "strict_gate_passed": false,
+    "fallback_used": true,
+    "p90_values_ms": [
+      90.0
+    ],
+    "p99_values_ms": [
+      220.0
+    ],
+    "p90_compliant": true,
+    "p99_compliant": true,
+    "effective_total_messages": 100000,
+    "requested_total_messages": 100000000,
+    "status_inputs": {
+      "tier_status": "ok",
+      "data_status": "failed",
+      "m2_status": "ok"
+    }
+  },
+  "status": "failed",
+  "global_capacity_claim": {
+    "claimable": false,
+    "reason": "local environment evidence is not production-proof for global 10B/1M claim"
+  }
+}

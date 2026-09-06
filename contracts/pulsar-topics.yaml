@@ -1,0 +1,591 @@
+version: "1.0"
+owner: "ekb-platform"
+description: "Pulsar topic contract for control-plane governance, audit, and observability events"
+
+tenancy:
+  tenant: "group"
+  namespaces:
+    - control
+    - audit
+    - observability
+    - a2a
+    - a2a-dlq
+
+topics:
+  - event_type: skill.registered
+    topic: persistent://group/control/skill-registered
+    payload_schema:
+      required:
+        - skill_name
+        - version
+        - stage
+        - owner
+      properties:
+        skill_name: string
+        version: string
+        stage: string
+        owner: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: skill.promoted
+    topic: persistent://group/control/skill-promoted
+    payload_schema:
+      required:
+        - skill_name
+        - version
+        - stage
+      properties:
+        skill_name: string
+        version: string
+        stage: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: mcp.invoked
+    topic: persistent://group/audit/mcp-invoke
+    payload_schema:
+      required:
+        - tenant_id
+        - region_id
+        - tool
+        - accepted
+      properties:
+        tenant_id: string
+        region_id: string
+        plant_id: string
+        skill: string
+        tool: string
+        accepted: boolean
+        reason: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: harness.evaluated
+    topic: persistent://group/audit/harness-evaluated
+    payload_schema:
+      required:
+        - tenant_id
+        - skill
+        - accepted
+      properties:
+        tenant_id: string
+        skill: string
+        accepted: boolean
+        reasons:
+          type: array
+          items:
+            type: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: capacity.estimated
+    topic: persistent://group/observability/capacity-estimated
+    payload_schema:
+      required:
+        - online_users
+        - estimated_qps
+        - recommended_a100_80g
+      properties:
+        online_users: integer
+        active_ratio: number
+        cache_hit_ratio: number
+        complex_ratio: number
+        estimated_qps: integer
+        estimated_heavy_llm_qps: integer
+        recommended_a100_80g: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: "*"
+    topic: persistent://group/control/misc
+    payload_schema:
+      required:
+        - event_type
+        - payload
+      properties:
+        event_type: string
+        payload: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: a2a.message
+    topic: persistent://{tenant}/a2a/{region}/{target_agent}
+    payload_schema:
+      required:
+        - event_type
+        - topic
+        - message_id
+        - correlation_id
+        - tenant_id
+        - region_id
+        - agent_id
+        - target_agent
+        - intent
+        - created_at
+        - payload
+      properties:
+        event_type: string
+        topic: string
+        message_id: string
+        correlation_id: string
+        tenant_id: string
+        region_id: string
+        plant_id: string
+        agent_id: string
+        target_agent: string
+        intent: string
+        priority: string
+        idempotency_key: string
+        created_at: string
+        ttl_seconds: integer
+        payload: object
+        metadata: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: a2a.subagent.retry
+    topic: persistent://{tenant}/a2a/{region}/{target_agent}
+    payload_schema:
+      required:
+        - event_type
+        - topic
+        - message_id
+        - correlation_id
+        - tenant_id
+        - region_id
+        - agent_id
+        - target_agent
+        - intent
+        - created_at
+        - payload
+      properties:
+        event_type: string
+        topic: string
+        message_id: string
+        correlation_id: string
+        tenant_id: string
+        region_id: string
+        plant_id: string
+        agent_id: string
+        target_agent: string
+        intent: string
+        priority: string
+        idempotency_key: string
+        created_at: string
+        ttl_seconds: integer
+        payload: object
+        metadata: object
+    qos:
+      delivery: at-least-once
+      retry_max: 20
+      dead_letter: true
+
+  - event_type: a2a.subagent.dlq
+    topic: persistent://{tenant}/a2a-dlq/{region}/{sub_agent_type}
+    payload_schema:
+      required:
+        - event_type
+        - topic
+        - message_id
+        - correlation_id
+        - tenant_id
+        - region_id
+        - intent
+        - created_at
+        - payload
+      properties:
+        event_type: string
+        topic: string
+        message_id: string
+        correlation_id: string
+        tenant_id: string
+        region_id: string
+        plant_id: string
+        agent_id: string
+        target_agent: string
+        intent: string
+        priority: string
+        idempotency_key: string
+        created_at: string
+        ttl_seconds: integer
+        payload: object
+        metadata: object
+    qos:
+      delivery: at-least-once
+      retry_max: 1
+      dead_letter: false
+
+  - event_type: a2a.supervision.scan.executed
+    topic: persistent://group/audit/a2a-supervision-scan-executed
+    payload_schema:
+      required:
+        - status
+        - summary
+      properties:
+        status: string
+        summary: object
+        alerts:
+          type: array
+          items:
+            type: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: a2a.supervision.alerted
+    topic: persistent://group/audit/a2a-supervision-alerted
+    payload_schema:
+      required:
+        - status
+        - summary
+        - alerts
+      properties:
+        status: string
+        summary: object
+        alerts:
+          type: array
+          items:
+            type: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: domain.capability.upserted
+    topic: persistent://group/control/domain-capability-upserted
+    payload_schema:
+      required:
+        - id
+        - domain
+        - capability_type
+        - title
+        - owner
+        - maturity
+      properties:
+        id: integer
+        domain: string
+        capability_type: string
+        title: string
+        owner: string
+        maturity: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: domain.capabilities.bootstrapped
+    topic: persistent://group/control/domain-capabilities-bootstrapped
+    payload_schema:
+      required:
+        - owner
+        - inserted
+      properties:
+        owner: string
+        inserted: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.erp.ingested
+    topic: persistent://group/connectors/erp-ingested
+    payload_schema:
+      required:
+        - connector_system
+        - direction
+        - tenant_id
+        - region_id
+        - source_id
+        - event_type
+        - idempotency_key
+        - status
+      properties:
+        connector_system: string
+        direction: string
+        tenant_id: string
+        region_id: string
+        source_id: string
+        event_type: string
+        idempotency_key: string
+        status: string
+        row_id: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.mes.ingested
+    topic: persistent://group/connectors/mes-ingested
+    payload_schema:
+      required:
+        - connector_system
+        - direction
+        - tenant_id
+        - region_id
+        - source_id
+        - event_type
+        - idempotency_key
+        - status
+      properties:
+        connector_system: string
+        direction: string
+        tenant_id: string
+        region_id: string
+        source_id: string
+        event_type: string
+        idempotency_key: string
+        status: string
+        row_id: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.scada.ingested
+    topic: persistent://group/connectors/scada-ingested
+    payload_schema:
+      required:
+        - connector_system
+        - direction
+        - tenant_id
+        - region_id
+        - source_id
+        - event_type
+        - idempotency_key
+        - status
+      properties:
+        connector_system: string
+        direction: string
+        tenant_id: string
+        region_id: string
+        source_id: string
+        event_type: string
+        idempotency_key: string
+        status: string
+        row_id: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.ticketing.ingested
+    topic: persistent://group/connectors/ticketing-ingested
+    payload_schema:
+      required:
+        - connector_system
+        - direction
+        - tenant_id
+        - region_id
+        - source_id
+        - event_type
+        - idempotency_key
+        - status
+      properties:
+        connector_system: string
+        direction: string
+        tenant_id: string
+        region_id: string
+        source_id: string
+        event_type: string
+        idempotency_key: string
+        status: string
+        row_id: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.profile.upserted
+    topic: persistent://group/connectors/profile-upserted
+    payload_schema:
+      required:
+        - connector_system
+        - profile_name
+        - status
+        - profile_id
+      properties:
+        connector_system: string
+        profile_name: string
+        status: string
+        profile_id: integer
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.checkpoint.updated
+    topic: persistent://group/connectors/checkpoint-updated
+    payload_schema:
+      required:
+        - connector_system
+        - profile_name
+        - cursor
+      properties:
+        connector_system: string
+        profile_name: string
+        cursor: string
+        watermark: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: connector.pull.executed
+    topic: persistent://group/connectors/pull-executed
+    payload_schema:
+      required:
+        - connector_system
+        - profile_name
+        - mode
+        - pulled
+        - accepted
+        - replayed
+        - next_cursor
+      properties:
+        connector_system: string
+        profile_name: string
+        mode: string
+        pulled: integer
+        accepted: integer
+        replayed: integer
+        from_cursor: string
+        next_cursor: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: datalake.table.registered
+    topic: persistent://group/control/datalake-table-registered
+    payload_schema:
+      required:
+        - tenant_id
+        - region_id
+        - table_name
+        - table_format
+        - source_topic
+      properties:
+        tenant_id: string
+        region_id: string
+        table_name: string
+        table_format: string
+        domain: string
+        source_topic: string
+        partition_fields:
+          type: array
+          items:
+            type: string
+        primary_keys:
+          type: array
+          items:
+            type: string
+        retention_days: integer
+        compaction_strategy: string
+        table_schema: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: flink.pipeline.registered
+    topic: persistent://group/control/flink-pipeline-registered
+    payload_schema:
+      required:
+        - job_name
+        - mode
+        - source_topic
+        - sink_table
+      properties:
+        job_name: string
+        mode: string
+        source_topic: string
+        sink_table: string
+        checkpoint_interval_ms: integer
+        watermark_delay_seconds: integer
+        parallelism: integer
+        exactly_once: boolean
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: flywheel.event.recorded
+    topic: persistent://group/observability/flywheel-event-recorded
+    payload_schema:
+      required:
+        - tenant_id
+        - region_id
+        - stage
+        - objective
+        - trace_id
+      properties:
+        tenant_id: string
+        region_id: string
+        plant_id: string
+        stage: string
+        objective: string
+        trace_id: string
+        payload: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: datapipeline.supervision.scan.executed
+    topic: persistent://group/audit/datapipeline-supervision-scan-executed
+    payload_schema:
+      required:
+        - status
+        - summary
+      properties:
+        status: string
+        summary: object
+        alerts:
+          type: array
+          items:
+            type: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: datapipeline.supervision.alerted
+    topic: persistent://group/audit/datapipeline-supervision-alerted
+    payload_schema:
+      required:
+        - status
+        - summary
+        - alerts
+      properties:
+        status: string
+        summary: object
+        alerts:
+          type: array
+          items:
+            type: object
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+compatibility:
+  strategy: backward-compatible
+  notes:
+    - New fields should be additive.
+    - Existing required fields must not be removed without migration.

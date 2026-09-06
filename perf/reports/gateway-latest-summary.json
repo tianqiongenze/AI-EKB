@@ -1,0 +1,7 @@
+{
+  "generated_at": 1775491606,
+  "gateway_latency_p95_ms": 4.0,
+  "gateway_latency_p99_ms": 6.0,
+  "http_req_failed_rate": 5e-06,
+  "source": "perf/reports/load-latest-summary.json"
+}

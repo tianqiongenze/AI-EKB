@@ -1,0 +1,19 @@
+resources:
+  - ../../k8s/base/namespace.yaml
+  - ../../k8s/base/configmap.yaml
+  - ../../k8s/base/deployment-ekb-control-plane.yaml
+  - ../../k8s/base/deployment-go-gateway.yaml
+  - ../../k8s/base/service.yaml
+  - ../../k8s/base/service-go-gateway.yaml
+  - ../../k8s/base/hpa.yaml
+  - ../../k8s/base/hpa-go-gateway.yaml
+  - ../../k8s/base/pdb.yaml
+  - ../../k8s/base/pdb-go-gateway.yaml
+  - ../../k8s/base/networkpolicy.yaml
+  - ../../k8s/base/networkpolicy-go-gateway.yaml
+  - ../../k8s/base/flink-dataplane-configmap.yaml
+  - ../../k8s/base/flink-deployment-session-cluster.yaml
+  - ../../k8s/base/flink-deployment-taskmanager.yaml
+  - ../../k8s/base/service-flink-session-cluster.yaml
+  - ../../k8s/base/flink-job-batch-quality-kpi.yaml
+  - ../../k8s/base/iceberg-catalog-configmap.yaml

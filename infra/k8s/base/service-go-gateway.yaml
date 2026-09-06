@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ekb-go-gateway
+  namespace: ekb-control-plane
+spec:
+  selector:
+    app: ekb-go-gateway
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8090
+  type: ClusterIP

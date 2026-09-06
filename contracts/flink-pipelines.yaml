@@ -1,0 +1,64 @@
+version: "1.0"
+owner: "ekb-platform"
+description: "Flink job contract for streaming ETL and flywheel metrics"
+
+pipelines:
+  - job_name: flink_connector_bronze_ingest
+    mode: streaming
+    source_topic: persistent://group/connectors/erp-ingested
+    sink_table: ekb_bronze_connector_events
+    checkpoint_interval_ms: 30000
+    watermark_delay_seconds: 30
+    parallelism: 8
+    exactly_once: true
+    restart_strategy: failure-rate
+    restart_max_failures_per_interval: 5
+    restart_failure_rate_interval: 10m
+    restart_delay: 30s
+    checkpoint_timeout_ms: 600000
+    max_concurrent_checkpoints: 1
+
+  - job_name: flink_agent_bronze_ingest
+    mode: streaming
+    source_topic: persistent://group/a2a/default
+    sink_table: ekb_bronze_agent_events
+    checkpoint_interval_ms: 30000
+    watermark_delay_seconds: 15
+    parallelism: 8
+    exactly_once: true
+    restart_strategy: failure-rate
+    restart_max_failures_per_interval: 5
+    restart_failure_rate_interval: 10m
+    restart_delay: 30s
+    checkpoint_timeout_ms: 600000
+    max_concurrent_checkpoints: 1
+
+  - job_name: flink_connector_silver_clean
+    mode: streaming
+    source_topic: persistent://group/connectors/raw
+    sink_table: ekb_silver_connector_events_clean
+    checkpoint_interval_ms: 60000
+    watermark_delay_seconds: 60
+    parallelism: 12
+    exactly_once: true
+    restart_strategy: failure-rate
+    restart_max_failures_per_interval: 5
+    restart_failure_rate_interval: 10m
+    restart_delay: 30s
+    checkpoint_timeout_ms: 600000
+    max_concurrent_checkpoints: 1
+
+  - job_name: flink_agent_governance_gold_agg
+    mode: streaming
+    source_topic: persistent://group/observability/flywheel-event-recorded
+    sink_table: ekb_gold_agent_governance_kpi_hourly
+    checkpoint_interval_ms: 60000
+    watermark_delay_seconds: 120
+    parallelism: 6
+    exactly_once: true
+    restart_strategy: failure-rate
+    restart_max_failures_per_interval: 5
+    restart_failure_rate_interval: 10m
+    restart_delay: 30s
+    checkpoint_timeout_ms: 600000
+    max_concurrent_checkpoints: 1

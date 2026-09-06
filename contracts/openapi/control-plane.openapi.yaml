@@ -1,0 +1,1404 @@
+openapi: 3.0.3
+info:
+  title: Yadea Technology Group EKB Control Plane API
+  version: 0.2.0
+paths:
+  /healthz:
+    get:
+      responses:
+        '200':
+          description: ok
+  /readyz:
+    get:
+      responses:
+        '200':
+          description: ready
+  /metrics:
+    get:
+      responses:
+        '200':
+          description: Prometheus text exposition of control-plane metrics
+  /mcp/invoke:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayInvokeRequest'
+      responses:
+        '200':
+          description: accepted
+        '403':
+          description: denied
+  /skills/register:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillManifest'
+      responses:
+        '200':
+          description: registered
+  /skills/promote:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkillPromotionRequest'
+      responses:
+        '200':
+          description: promoted
+  /harness/evaluate:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarnessEvaluationRequest'
+      responses:
+        '200':
+          description: harness evaluated
+  /capacity/estimate:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapacityEstimateRequest'
+      responses:
+        '200':
+          description: capacity estimated
+  /audit/query:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditQuery'
+      responses:
+        '200':
+          description: audits queried
+  /a2a/supervision/scan:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/A2ASupervisionScanRequest'
+      responses:
+        '200':
+          description: a2a supervision scan result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/A2ASupervisionScanResult'
+  /datapipeline/supervision/scan:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPipelineSupervisionScanRequest'
+      responses:
+        '200':
+          description: datapipeline supervision scan result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPipelineSupervisionScanResult'
+  /events/relay:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelayRequest'
+      responses:
+        '200':
+          description: relay executed
+  /datalake/tables/register:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataLakeTableSpec'
+      responses:
+        '200':
+          description: datalake table registered
+  /flink/pipelines/register:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlinkPipelineSpec'
+      responses:
+        '200':
+          description: flink pipeline registered
+  /flywheel/events:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataFlywheelEvent'
+      responses:
+        '200':
+          description: flywheel event recorded
+  /a2a/publish:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/A2AEnvelope'
+      responses:
+        '200':
+          description: a2a published
+
+  /a2a/sub-agent/delegate:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubAgentTaskRequest'
+      responses:
+        '200':
+          description: delegated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubAgentTaskResult'
+  /a2a/sub-agent/result:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubAgentTaskResult'
+      responses:
+        '200':
+          description: task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubAgentTaskRecord'
+  /a2a/sub-agent/tasks:
+    get:
+      parameters:
+        - in: query
+          name: supervisor_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubAgentTaskRecord'
+  /a2a/sub-agent/tasks/{task_id}:
+    get:
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: task detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubAgentTaskRecord'
+  /a2a/consume:
+    post:
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: a2a consumed
+  /graph/upsert:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphUpsertRequest'
+      responses:
+        '200':
+          description: graph upserted
+  /vector/upsert:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VectorUpsertRequest'
+      responses:
+        '200':
+          description: vector upserted
+  /vector/search:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VectorSearchRequest'
+      responses:
+        '200':
+          description: vector search
+  /domain/capabilities/upsert:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessCapabilityManifest'
+      responses:
+        '200':
+          description: capability upserted
+  /domain/capabilities/search:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainCapabilitySearchRequest'
+      responses:
+        '200':
+          description: capability search result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainCapabilitySearchResult'
+  /domain/capabilities/coverage:
+    get:
+      responses:
+        '200':
+          description: domain capability coverage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainCoverageResponse'
+  /domain/capabilities/bootstrap:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainBootstrapRequest'
+      responses:
+        '200':
+          description: domain capabilities bootstrapped
+  /connectors/ingest:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorEnvelope'
+      responses:
+        '200':
+          description: connector event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorIngestResponse'
+        '422':
+          description: request validation failed
+  /connectors/replay:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorReplayRequest'
+      responses:
+        '200':
+          description: connector replay result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorReplayResult'
+  /connectors/profiles/upsert:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorProfileUpsertRequest'
+      responses:
+        '200':
+          description: connector profile upserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorProfileUpsertResponse'
+  /connectors/profiles/list:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorProfileListRequest'
+      responses:
+        '200':
+          description: connector profiles list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorProfileListResponse'
+  /connectors/checkpoint/get:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorCheckpointRequest'
+      responses:
+        '200':
+          description: connector checkpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorCheckpointResponse'
+  /connectors/checkpoint/update:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorCheckpointUpdateRequest'
+      responses:
+        '200':
+          description: connector checkpoint updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorCheckpointResponse'
+  /connectors/health:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorHealthRequest'
+      responses:
+        '200':
+          description: connector health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorHealthResult'
+  /connectors/pull:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorPullRequest'
+      responses:
+        '200':
+          description: connector pull result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorPullResult'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SkillManifest:
+      type: object
+      required:
+        - skill_name
+        - version
+        - owner
+        - risk_level
+      properties:
+        skill_name:
+          type: string
+        version:
+          type: string
+        owner:
+          type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high]
+        allowed_tools:
+          type: array
+          items:
+            type: string
+        allowed_domains:
+          type: array
+          items:
+            type: string
+        residency_scope:
+          type: array
+          items:
+            type: string
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        changelog:
+          type: string
+    SkillPromotionRequest:
+      type: object
+      required:
+        - skill_name
+        - version
+        - target_stage
+      properties:
+        skill_name:
+          type: string
+        version:
+          type: string
+        target_stage:
+          type: string
+          enum: [draft, review, staging, production, deprecated]
+    GatewayInvokeRequest:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+        - plant_id
+        - domain
+        - user_or_agent_id
+        - skill_name
+        - skill_version
+        - tool_name
+      properties:
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        plant_id:
+          type: string
+        domain:
+          $ref: '#/components/schemas/BusinessDomain'
+        user_or_agent_id:
+          type: string
+        skill_name:
+          type: string
+        skill_version:
+          type: string
+        tool_name:
+          type: string
+        payload:
+          type: object
+    HarnessEvaluationRequest:
+      type: object
+      required:
+        - tenant_id
+        - skill_name
+        - skill_version
+        - quality_score
+        - safety_score
+        - regression_score
+        - latency_ms
+      properties:
+        tenant_id:
+          type: string
+        skill_name:
+          type: string
+        skill_version:
+          type: string
+        quality_score:
+          type: number
+        safety_score:
+          type: number
+        regression_score:
+          type: number
+        latency_ms:
+          type: integer
+    CapacityEstimateRequest:
+      type: object
+      required:
+        - online_users
+        - active_ratio
+        - cache_hit_ratio
+        - complex_ratio
+      properties:
+        online_users:
+          type: integer
+        active_ratio:
+          type: number
+        cache_hit_ratio:
+          type: number
+        complex_ratio:
+          type: number
+    AuditQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 50
+    RelayRequest:
+      type: object
+      properties:
+        batch_size:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+    A2AEnvelope:
+      type: object
+      required:
+        - message_id
+        - correlation_id
+        - tenant_id
+        - region_id
+        - agent_id
+        - target_agent
+        - intent
+        - created_at
+        - payload
+      properties:
+        message_id:
+          type: string
+        correlation_id:
+          type: string
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        plant_id:
+          type: string
+        agent_id:
+          type: string
+        target_agent:
+          type: string
+        intent:
+          type: string
+        priority:
+          type: string
+        idempotency_key:
+          type: string
+        created_at:
+          type: string
+        ttl_seconds:
+          type: integer
+        payload:
+          type: object
+        metadata:
+          type: object
+    GraphRelation:
+      type: object
+      required:
+        - source
+        - target
+        - relation_type
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        relation_type:
+          type: string
+    GraphUpsertRequest:
+      type: object
+      required:
+        - rows
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphRelation'
+    VectorUpsertRequest:
+      type: object
+      required:
+        - collection_name
+        - rows
+      properties:
+        collection_name:
+          type: string
+        rows:
+          type: array
+          items:
+            type: object
+    VectorSearchRequest:
+      type: object
+      required:
+        - collection_name
+        - vectors
+      properties:
+        collection_name:
+          type: string
+        vectors:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+        limit:
+          type: integer
+          default: 10
+    VectorSearchResult:
+      type: object
+      properties:
+        results:
+          type: object
+    BusinessCapabilityManifest:
+      type: object
+      required:
+        - domain
+        - capability_type
+        - title
+        - owner
+      properties:
+        domain:
+          type: string
+          enum:
+            - strategy
+            - rnd
+            - manufacturing
+            - quality
+            - procurement
+            - aftersales
+            - hr
+            - finance
+            - materials
+            - marketing
+            - iot
+            - knowledge_graph
+        capability_type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        owner:
+          type: string
+        maturity:
+          type: string
+          enum: [planned, implemented, validated]
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+    DomainCapabilitySearchRequest:
+      type: object
+      properties:
+        domain:
+          type: string
+          enum:
+            - strategy
+            - rnd
+            - manufacturing
+            - quality
+            - procurement
+            - aftersales
+            - hr
+            - finance
+            - materials
+            - marketing
+            - iot
+            - knowledge_graph
+        query:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
+    DomainBootstrapRequest:
+      type: object
+      properties:
+        owner:
+          type: string
+    DomainCapabilitySearchResult:
+      type: object
+      required:
+        - count
+        - items
+      properties:
+        count:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessCapabilityManifest'
+    DomainCoverageItem:
+      type: object
+      required:
+        - domain
+        - required_count
+        - implemented_count
+        - planned_count
+        - status
+        - missing_capabilities
+        - implemented_capabilities
+      properties:
+        domain:
+          type: string
+        required_count:
+          type: integer
+        implemented_count:
+          type: integer
+        planned_count:
+          type: integer
+        status:
+          type: string
+          enum: [met, partial, not_met]
+        missing_capabilities:
+          type: array
+          items:
+            type: string
+        implemented_capabilities:
+          type: array
+          items:
+            type: string
+    DomainCoverageResponse:
+      type: object
+      required:
+        - summary
+        - items
+      properties:
+        summary:
+          type: object
+          properties:
+            met:
+              type: integer
+            partial:
+              type: integer
+            not_met:
+              type: integer
+            total:
+              type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainCoverageItem'
+    ConnectorEnvelope:
+      type: object
+      required:
+        - connector_system
+        - direction
+        - tenant_id
+        - region_id
+        - source_id
+        - event_type
+        - occurred_at
+        - idempotency_key
+        - payload
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        source_id:
+          type: string
+        event_type:
+          type: string
+        occurred_at:
+          type: string
+        idempotency_key:
+          type: string
+        payload:
+          type: object
+        metadata:
+          type: object
+    ConnectorReplayRequest:
+      type: object
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+    ConnectorReplayResult:
+      type: object
+      required:
+        - replayed
+        - accepted
+        - ignored
+        - by_system
+      properties:
+        replayed:
+          type: integer
+        accepted:
+          type: integer
+        ignored:
+          type: integer
+        by_system:
+          type: object
+    ConnectorProfile:
+      type: object
+      required:
+        - connector_system
+        - profile_name
+        - base_url
+        - auth_type
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        base_url:
+          type: string
+        auth_type:
+          type: string
+          enum: [bearer, basic, apikey]
+        auth_config:
+          type: object
+        timeout_ms:
+          type: integer
+        pull_batch_size:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        metadata:
+          type: object
+          description: Adapter specific configuration such as endpoint, table, delta_field, watermark.
+        adapter_type:
+          type: string
+          enum: [generic, sap_odata, servicenow_table]
+          description: Adapter selection key, e.g. generic, sap_odata, servicenow_table.
+    ConnectorIngestResponse:
+      type: object
+      required: [status, reason]
+      properties:
+        status:
+          type: string
+          enum: [accepted, replayed, ignored]
+        reason:
+          type: string
+    ConnectorProfileUpsertResponse:
+      type: object
+      required: [status, profile_id]
+      properties:
+        status:
+          type: string
+        profile_id:
+          type: integer
+    ConnectorProfileListResponse:
+      type: object
+      required: [count, items]
+      properties:
+        count:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorProfile'
+    ConnectorProfileUpsertRequest:
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          $ref: '#/components/schemas/ConnectorProfile'
+    ConnectorProfileListRequest:
+      type: object
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
+    ConnectorCheckpointRequest:
+      type: object
+      required: [connector_system, profile_name]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+    ConnectorCheckpointUpdateRequest:
+      type: object
+      required: [connector_system, profile_name, cursor]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        cursor:
+          type: string
+        watermark:
+          type: string
+    ConnectorCheckpointResponse:
+      type: object
+      required: [connector_system, profile_name, cursor]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        cursor:
+          type: string
+        watermark:
+          type: string
+        updated_at:
+          type: string
+    ConnectorPullRequest:
+      type: object
+      required: [connector_system, profile_name]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        mode:
+          type: string
+          enum: [dry_run, commit]
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 50
+        from_cursor:
+          type: string
+    ConnectorPullResult:
+      type: object
+      required:
+        - connector_system
+        - profile_name
+        - mode
+        - pulled
+        - accepted
+        - replayed
+        - next_cursor
+        - sample_event_ids
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        mode:
+          type: string
+          enum: [dry_run, commit]
+        pulled:
+          type: integer
+        accepted:
+          type: integer
+          description: For dry_run mode, this is would-be accepted count; for commit mode, actual ingested accepted count.
+        replayed:
+          type: integer
+        next_cursor:
+          type: string
+        sample_event_ids:
+          type: array
+          items:
+            type: string
+        adapter_type:
+          type: string
+    ConnectorHealthRequest:
+      type: object
+      required: [connector_system, profile_name]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+    ConnectorHealthResult:
+      type: object
+      required: [connector_system, profile_name, status, detail]
+      properties:
+        connector_system:
+          type: string
+          enum: [erp, mes, scada, ticketing]
+        profile_name:
+          type: string
+        status:
+          type: string
+        detail:
+          type: string
+
+    SubAgentTaskRequest:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+        - supervisor_id
+        - sub_agent_type
+        - task_objective
+      properties:
+        tenant_id:
+          type: string
+          default: system
+        region_id:
+          type: string
+          default: global
+        plant_id:
+          type: string
+        supervisor_id:
+          type: string
+        sub_agent_type:
+          type: string
+        task_objective:
+          type: string
+        context_payload:
+          type: object
+        timeout_seconds:
+          type: integer
+        idempotency_key:
+          type: string
+        task_id:
+          type: string
+        correlation_id:
+          type: string
+        callback_agent:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        metadata:
+          type: object
+    SubAgentTaskResult:
+      type: object
+      required:
+        - task_id
+        - sub_agent_type
+        - status
+      properties:
+        task_id:
+          type: string
+        sub_agent_type:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, retrying, completed, failed, cancelled]
+        result_payload:
+          type: object
+        error:
+          type: string
+        worker_id:
+          type: string
+    SubAgentTaskRecord:
+      type: object
+      required:
+        - task_id
+        - idempotency_key
+        - tenant_id
+        - region_id
+        - supervisor_id
+        - sub_agent_type
+        - task_objective
+        - status
+        - attempt_count
+        - result_payload
+        - created_at
+        - updated_at
+      properties:
+        task_id:
+          type: string
+        idempotency_key:
+          type: string
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        plant_id:
+          type: string
+        supervisor_id:
+          type: string
+        sub_agent_type:
+          type: string
+        task_objective:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, retrying, completed, failed, cancelled]
+        attempt_count:
+          type: integer
+        result_payload:
+          type: object
+        error:
+          type: string
+        worker_id:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        completed_at:
+          type: string
+
+    DataLakeTableSpec:
+      type: object
+      required:
+        - table_name
+        - table_format
+        - domain
+        - source_topic
+        - tenant_id
+        - region_id
+      properties:
+        table_name:
+          type: string
+        table_format:
+          type: string
+          enum: [iceberg]
+        domain:
+          type: string
+        source_topic:
+          type: string
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        partition_fields:
+          type: array
+          items:
+            type: string
+        primary_keys:
+          type: array
+          items:
+            type: string
+        retention_days:
+          type: integer
+        compaction_strategy:
+          type: string
+          enum: [size_tiered, bin_pack, binpack, sort]
+        table_schema:
+          type: object
+
+    FlinkPipelineSpec:
+      type: object
+      required:
+        - job_name
+        - mode
+        - source_topic
+        - sink_table
+      properties:
+        job_name:
+          type: string
+        mode:
+          type: string
+          enum: [streaming, batch]
+        source_topic:
+          type: string
+        sink_table:
+          type: string
+        checkpoint_interval_ms:
+          type: integer
+        watermark_delay_seconds:
+          type: integer
+        parallelism:
+          type: integer
+        exactly_once:
+          type: boolean
+        restart_strategy:
+          type: string
+        restart_max_failures_per_interval:
+          type: integer
+        restart_failure_rate_interval:
+          type: string
+        restart_delay:
+          type: string
+        checkpoint_timeout_ms:
+          type: integer
+        max_concurrent_checkpoints:
+          type: integer
+
+    A2ASupervisionScanRequest:
+      type: object
+      properties:
+        lookback_limit:
+          type: integer
+          minimum: 10
+          maximum: 5000
+          default: 200
+        dead_event_threshold:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 10
+        failed_task_ratio_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.2
+
+    A2ASupervisionAlert:
+      type: object
+      required:
+        - alert_type
+        - severity
+        - message
+      properties:
+        alert_type:
+          type: string
+        severity:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    A2ASupervisionScanResult:
+      type: object
+      required:
+        - status
+        - alerts
+        - summary
+      properties:
+        status:
+          type: string
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/A2ASupervisionAlert'
+        summary:
+          type: object
+
+    DataPipelineSupervisionScanRequest:
+      type: object
+      properties:
+        lookback_limit:
+          type: integer
+          minimum: 10
+          maximum: 5000
+          default: 200
+        dead_event_threshold:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 10
+        missing_signal_threshold:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+
+    DataPipelineSupervisionScanResult:
+      type: object
+      required:
+        - status
+        - alerts
+        - summary
+      properties:
+        status:
+          type: string
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/A2ASupervisionAlert'
+        summary:
+          type: object
+
+    DataFlywheelEvent:
+      type: object
+      required:
+        - tenant_id
+        - region_id
+        - stage
+        - objective
+        - trace_id
+      properties:
+        tenant_id:
+          type: string
+        region_id:
+          type: string
+        plant_id:
+          type: string
+        stage:
+          type: string
+          enum: [ingest, transform, train, serve, feedback]
+        objective:
+          type: string
+        trace_id:
+          type: string
+        payload:
+          type: object
+
+    BusinessDomain:
+      type: string
+      enum: [strategy, rnd, manufacturing, quality, procurement, aftersales, hr, finance, materials, marketing, iot, knowledge_graph]

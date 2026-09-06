@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-gateway-config
+data:
+  EKB_GATEWAY_BACKEND_ROUTE_MAP: {{ .Values.gateway.backendRouteMap | quote }}
+  EKB_GATEWAY_PROXY_MAX_IDLE_CONNS: {{ .Values.gateway.proxyMaxIdleConns | quote }}
+  EKB_GATEWAY_PROXY_MAX_IDLE_CONNS_PER_HOST: {{ .Values.gateway.proxyMaxIdleConnsPerHost | quote }}
+  EKB_GATEWAY_PROXY_MAX_CONNS_PER_HOST: {{ .Values.gateway.proxyMaxConnsPerHost | quote }}
+  EKB_GATEWAY_PROXY_IDLE_CONN_TIMEOUT_SECONDS: {{ .Values.gateway.proxyIdleConnTimeoutSeconds | quote }}

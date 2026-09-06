@@ -1,0 +1,108 @@
+version: "1.0"
+owner: "yadea-tech"
+description: "Agent-to-Agent (A2A) protocol envelope for Yadea EKB industrial deployment"
+
+envelope:
+  required:
+    - message_id
+    - correlation_id
+    - tenant_id
+    - region_id
+    - agent_id
+    - target_agent
+    - intent
+    - created_at
+    - payload
+  properties:
+    message_id: string
+    correlation_id: string
+    tenant_id: string
+    region_id: string
+    plant_id: string
+    agent_id: string
+    target_agent: string
+    intent: string
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+    idempotency_key: string
+    created_at: string
+    ttl_seconds: integer
+    payload: object
+    metadata:
+      type: object
+
+delivery:
+  semantics: at-least-once
+  ordering: per-agent
+  retry_max: 10
+  dead_letter: true
+  dedupe: idempotency_key
+
+topic_strategy:
+  base: persistent://{tenant}/a2a
+  patterns:
+    - persistent://{tenant}/a2a/{region}/{target_agent}
+    - persistent://{tenant}/a2a/{region}/{target_agent}/priority-{priority}
+
+compatibility:
+  strategy: backward-compatible
+  notes:
+    - new fields must be additive
+    - removal requires version bump and migration window
+
+domain_intents:
+  quality:
+    - defect_triage
+    - quality_trace
+  procurement:
+    - supplier_risk_check
+    - po_approval
+  manufacturing:
+    - yield_optimization
+    - equipment_tuning
+  aftersales:
+    - complaint_escalation
+    - remote_service_assist
+  finance:
+    - budget_risk_review
+  hr:
+    - training_path_recommend
+  materials:
+    - inventory_replenishment
+  marketing:
+    - customer_segment_action
+
+connector_integrations:
+  systems:
+    - erp
+    - mes
+    - scada
+    - ticketing
+  envelope:
+    required:
+      - connector_system
+      - direction
+      - tenant_id
+      - region_id
+      - source_id
+      - event_type
+      - occurred_at
+      - idempotency_key
+      - payload
+    properties:
+      connector_system: [erp, mes, scada, ticketing]
+      direction: [inbound, outbound]
+      tenant_id: string
+      region_id: string
+      source_id: string
+      event_type: string
+      occurred_at: string
+      idempotency_key: string
+      payload: object
+      metadata: object
+  replay:
+    strategy: idempotent-replay
+    notes:
+      - replay keeps business side effects idempotent by idempotency_key
+      - replay_count should be tracked for audit

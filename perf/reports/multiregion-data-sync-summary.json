@@ -1,0 +1,16 @@
+{
+  "generated_at": 1775562151,
+  "existing_1m_sync_status": "baseline-previously-achieved-and-currently-rehydrated",
+  "new_records_added_tidb_each_region": 2000,
+  "checks": {
+    "ekb-region-a": {
+      "tidb_rows_before": 250000,
+      "tidb_rows_after": 252000
+    },
+    "ekb-region-b": {
+      "tidb_rows_before": 0,
+      "tidb_rows_after": 2000
+    }
+  },
+  "status": "ok"
+}

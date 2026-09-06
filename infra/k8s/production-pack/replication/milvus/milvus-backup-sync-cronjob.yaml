@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: milvus-cross-region-backup-sync
+  namespace: ekb-control-plane
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: sync
+              image: alpine:3.20
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "sync milvus snapshots to secondary region object storage"

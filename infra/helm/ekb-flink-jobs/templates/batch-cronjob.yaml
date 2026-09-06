@@ -1,0 +1,40 @@
+{{- if .Values.batchJob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-batch-quality-kpi
+spec:
+  schedule: {{ .Values.batchJob.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}-flink-job
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: flink-runner
+              image: {{ .Values.batchJob.image | quote }}
+              command:
+                - /bin/sh
+                - -c
+                - >
+                  flink run
+                  -m {{ .Release.Name }}-jobmanager:8081
+                  --detached
+                  --savepointPath {{ .Values.batchJob.savepointPath }}
+                  --allowNonRestoredState
+                  -Dexecution.checkpointing.mode=EXACTLY_ONCE
+                  -Dstate.checkpoints.dir={{ .Values.sessionCluster.checkpointDir }}
+                  -Dstate.savepoints.dir={{ .Values.sessionCluster.savepointDir }}
+                  {{ .Values.batchJob.jarPath }}
+                  --source-topic {{ .Values.batchJob.sourceTopic }}
+                  --sink-table {{ .Values.batchJob.sinkTable }}
+              envFrom:
+                - configMapRef:
+                    name: {{ .Values.configMapName }}
+{{- end }}

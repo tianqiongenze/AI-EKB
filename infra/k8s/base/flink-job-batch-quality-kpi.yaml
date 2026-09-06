@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ekb-flink-batch-quality-kpi
+  namespace: ekb-control-plane
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ekb-flink-job
+            job: batch-quality-kpi
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: flink-runner
+              image: yadea-ekb-flink-jobs:0.1.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - >
+                  flink run
+                  -m ${FLINK_JOBMANAGER_ADDRESS}
+                  --detached
+                  --savepointPath ${FLINK_SAVEPOINT_PATH}
+                  --allowNonRestoredState
+                  -Dexecution.checkpointing.interval=${FLINK_CHECKPOINT_INTERVAL_MS}
+                  -Dexecution.checkpointing.mode=EXACTLY_ONCE
+                  -Dstate.backend=${FLINK_STATE_BACKEND}
+                  -Dstate.checkpoints.dir=${FLINK_CHECKPOINTS_DIR}
+                  -Dstate.savepoints.dir=${FLINK_SAVEPOINTS_DIR}
+                  /opt/flink/jobs/ekb-quality-kpi.jar
+                  --source-topic persistent://group/connectors/normalized
+                  --sink-table ekb_gold_quality_kpi_daily
+              env:
+                - name: FLINK_JOBMANAGER_ADDRESS
+                  value: flink-jobmanager.ekb-control-plane.svc.cluster.local:8081
+                - name: FLINK_SAVEPOINT_PATH
+                  value: s3a://ekb-lakehouse/savepoints/ekb-quality-kpi/
+                - name: FLINK_CHECKPOINTS_DIR
+                  value: s3a://ekb-lakehouse/checkpoints/
+                - name: FLINK_SAVEPOINTS_DIR
+                  value: s3a://ekb-lakehouse/savepoints/
+              envFrom:
+                - configMapRef:
+                    name: ekb-flink-dataplane-config

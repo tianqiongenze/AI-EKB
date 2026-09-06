@@ -1,0 +1,38 @@
+{
+  "generated_at": 1775569481,
+  "existing_1m_sync_status": "historical-baseline-completed-earlier; final incremental audit executed",
+  "delta_sync": {
+    "tidb_each_region": 300,
+    "redis_each_region": 300,
+    "neo4j_each_region": 300
+  },
+  "before": {
+    "ekb-region-a": {
+      "tidb": 252000,
+      "redis": 400000,
+      "neo4j": -1,
+      "milvus_health": 1
+    },
+    "ekb-region-b": {
+      "tidb": 2000,
+      "redis": 200000,
+      "neo4j": -1,
+      "milvus_health": 1
+    }
+  },
+  "after": {
+    "ekb-region-a": {
+      "tidb": 252300,
+      "redis": 400300,
+      "neo4j": -1,
+      "milvus_health": 1
+    },
+    "ekb-region-b": {
+      "tidb": 2300,
+      "redis": 200300,
+      "neo4j": -1,
+      "milvus_health": 1
+    }
+  },
+  "status": "ok"
+}

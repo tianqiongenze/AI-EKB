@@ -1,0 +1,51 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Java / Maven
+target/
+.classpath
+.project
+.settings/
+
+# IDE
+.idea/
+.vscode/
+
+# Runtime data
+data/
+
+# Local runtime state & large local artifacts (never commit)
+tmp/
+dist/
+.omo/
+paper/
+openspec-test/
+*.db
+*.db-shm
+*.db-wal
+*.pdf
+
+# Vendored external collections (not part of the platform)
+awesome-journal-skills/
+
+# Node / frontend (future)
+node_modules/
+.unbuild/
+.turbo/
+
+# Env files with real credentials (examples only are committed)
+.env
+.env.*
+perf/artifacts/

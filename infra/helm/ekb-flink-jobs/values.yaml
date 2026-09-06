@@ -1,0 +1,46 @@
+sessionCluster:
+  image: ghcr.io/your-org/your-repo/yadea-ekb-flink-session:latest
+  checkpointDir: s3a://ekb-lakehouse/checkpoints/
+  savepointDir: s3a://ekb-lakehouse/savepoints/
+  checkpointIntervalMs: "30000"
+  taskSlots: "8"
+  taskmanagerReplicas: 3
+  resources:
+    jobmanager:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "2"
+        memory: "4Gi"
+    taskmanager:
+      requests:
+        cpu: "1000m"
+        memory: "2Gi"
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
+iceberg:
+  catalogType: nessie
+  catalogUri: http://nessie.ekb-data.svc.cluster.local:19120/api/v1
+  ref: main
+  warehouseUri: s3a://ekb-lakehouse/warehouse
+  ioImpl: org.apache.iceberg.hadoop.HadoopFileIO
+  lockImpl: org.apache.iceberg.aws.dynamodb.DynamoDbLockManager
+  lockTable: ekb-iceberg-locks
+
+credentials:
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
+
+batchJob:
+  enabled: true
+  schedule: "*/30 * * * *"
+  image: yadea-ekb-flink-jobs:0.1.0
+  jarPath: /opt/flink/jobs/ekb-quality-kpi.jar
+  sourceTopic: persistent://group/connectors/normalized
+  sinkTable: ekb_gold_quality_kpi_daily
+  savepointPath: s3a://ekb-lakehouse/savepoints/ekb-quality-kpi/
+
+configMapName: ekb-flink-dataplane-config

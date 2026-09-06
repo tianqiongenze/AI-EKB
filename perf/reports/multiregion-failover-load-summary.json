@@ -1,0 +1,26 @@
+{
+  "generated_at": 1775583473,
+  "region_a": {
+    "base_url": "http://127.0.0.1:31935",
+    "pre": {
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0
+    },
+    "post": {
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0
+    }
+  },
+  "region_b": {
+    "base_url": "http://127.0.0.1:30489",
+    "pre": {
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0
+    },
+    "failover": {
+      "http_req_failed_rate": 0.0,
+      "p95_ms": 0.0
+    }
+  },
+  "status": "ok"
+}
