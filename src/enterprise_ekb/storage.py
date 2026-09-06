@@ -106,7 +106,6 @@ class SQLiteControlPlaneStore:
             "EKB_RELAY_INSTANCE_ID",
             f"{os.getenv('HOSTNAME', 'host')}-{os.getpid()}",
         )
-        self._outbox_lock = threading.Lock()
         self._init_schema()
 
     def _init_schema(self) -> None:
@@ -519,78 +518,62 @@ class SQLiteControlPlaneStore:
         return event_id
 
     def claim_pending_outbox(self, limit: int, claim_timeout_seconds: int = 30) -> list[dict[str, Any]]:
-        with self._outbox_lock:
-            ids: list[int] = []
-
-            def _operation() -> None:
-                nonlocal ids
-                self._conn.execute(
-                    """
-                    UPDATE outbox_events
-                    SET status = 'pending',
-                        claimed_by = '',
-                        claimed_at = NULL
-                    WHERE status = 'processing'
-                      AND next_retry_at IS NOT NULL
-                      AND next_retry_at <= (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-                    """
-                )
-                rows = self._conn.execute(
-                    """
+        def _operation() -> list[dict[str, Any]]:
+            # Reclaim events left in 'processing' by crashed claimers.
+            self._conn.execute(
+                """
+                UPDATE outbox_events
+                SET status = 'pending',
+                    claimed_by = '',
+                    claimed_at = NULL
+                WHERE status = 'processing'
+                  AND next_retry_at IS NOT NULL
+                  AND next_retry_at <= (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                """
+            )
+            # Atomic claim: a single UPDATE decides the winners (id IN subquery +
+            # status guard), so concurrent relay instances can never claim the same
+            # event regardless of process boundaries. Mirrors the TiDB store.
+            self._conn.execute(
+                """
+                UPDATE outbox_events
+                SET status = 'processing',
+                    claimed_by = ?,
+                    claimed_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    next_retry_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+' || ? || ' seconds'))
+                WHERE id IN (
                     SELECT id
                     FROM outbox_events
                     WHERE status = 'pending'
                       AND (next_retry_at IS NULL OR next_retry_at <= (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')))
                     ORDER BY id
                     LIMIT ?
-                    """,
-                    (limit,),
-                ).fetchall()
-                ids = [int(row["id"]) for row in rows]
-                if not ids:
-                    return
-
-                placeholders = ",".join("?" for _ in ids)
-                params: list[Any] = [self._instance_id, claim_timeout_seconds]
-                params.extend(ids)
-                self._conn.execute(
-                    f"""
-                    UPDATE outbox_events
-                    SET status = 'processing',
-                        claimed_by = ?,
-                        claimed_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-                        next_retry_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+' || ? || ' seconds'))
-                    WHERE id IN ({placeholders})
-                      AND status = 'pending'
-                    """,
-                    tuple(params),
                 )
-
-            self._run_write(_operation)
-            if not ids:
-                return []
-
-        rows = self._conn.execute(
-            """
-            SELECT id, event_type, payload_json, retries
-            FROM outbox_events
-            WHERE status = 'processing' AND claimed_by = ?
-            ORDER BY id
-            LIMIT ?
-            """,
-            (self._instance_id, limit),
-        ).fetchall()
-        events: list[dict[str, Any]] = []
-        for row in rows:
-            events.append(
+                  AND status = 'pending'
+                """,
+                (self._instance_id, claim_timeout_seconds, limit),
+            )
+            rows = self._conn.execute(
+                """
+                SELECT id, event_type, payload_json, retries
+                FROM outbox_events
+                WHERE status = 'processing' AND claimed_by = ?
+                ORDER BY id
+                LIMIT ?
+                """,
+                (self._instance_id, limit),
+            ).fetchall()
+            return [
                 {
                     "id": row["id"],
                     "event_type": row["event_type"],
                     "payload": json.loads(row["payload_json"]),
                     "retries": row["retries"],
                 }
-            )
-        return events
+                for row in rows
+            ]
+
+        return self._run_write(_operation)
 
     def next_pending_outbox(self, limit: int) -> list[dict[str, Any]]:
         return self.claim_pending_outbox(limit=limit)

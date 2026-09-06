@@ -265,3 +265,17 @@ flowchart LR
 ## 13. 二轮结论
 
 项目群综合 **6.5/10**（v1 6.1）。下一步杠杆排序：**P0-1 异步化热路径 > P0-2 分布式限流与请求签名（风控 4.5 分的直接补课）> 多级缓存启用（命中率 0→55%，性价比最高）> P0-6 可观测三件套 > P1 create_app 拆分（DDD 落地载体）**。前端多端方案见 `docs/frontend-multiclient-design.md`。
+
+## 14. P0 落地实录（2026-09 第三轮，68/68 测试 + 四门禁通过）
+
+| P0 项 | 状态 | 落地内容 | 验证 |
+|---|---|---|---|
+| P0-3 Outbox 原子认领 | ✅ 已落地 | SQLite store 与 TiDB store 对齐为单条原子 UPDATE（`id IN (SELECT…LIMIT)` + status 守卫），删除进程内 `_outbox_lock` 依赖，多实例 relay 不再可能重复认领 | `test_storage_and_outbox` 全绿 |
+| P0-2a 分布式限流 | ✅ 已落地 | `risk_control.DistributedRateLimiter`：Redis Lua 原子滑窗（`EKB_RATE_LIMIT_BACKEND=redis` 启用），Redis 故障自动降级内存滑窗；MCP/A2A 五个热点端点接入"本地粗筛+全局精控"两级限流 | 专项测试（含降级路径） |
+| P0-2b 防重放/防刷 | ✅ 已落地 | `AntiReplayMiddleware`（纯 ASGI）：HMAC-SHA256 签名（method+path+timestamp+nonce+body 摘要）±300s 时间窗 + Redis/memory 单次 nonce；`X-EKB-Timestamp/Nonce/Signature` 三头；默认关闭（`EKB_REQUEST_SIGNING_SECRET` 为空零开销） | 6 项专项测试（缺失头/过期/坏签名/重放/放行） |
+| P0-4 JWT 认证 | ✅ 已落地 | `verify_bearer_credential`：静态 Token 常量时比较 + HS256 JWT（exp 必验、aud 可选校验），admin/connector/业务三条鉴权路径统一走该验证器；静态 Token 向后兼容 | 单测 + 端到端（admin 端点 JWT 200） |
+| P0-5 deps 凭据整改 | ✅ 已落地 | neo4j 明文凭据 → secretKeyRef；redis `--requirepass` 注入；pulsar-standalone 启用 token 认证（secret 挂载密钥）；milvus 启用 authorizationEnabled + minio 双键 secret 化；新增 `credentials-secret.example.yaml` 模板 | 全 deps YAML 解析校验 |
+| P0-6 可观测（代码侧） | ✅ 已落地 | `logging_setup`：`EKB_LOG_FORMAT=json` 结构化日志（ts/level/logger/message/request_id）；ASGI 中间件每请求生成 request_id 并回写 `X-Request-ID` 响应头；新增 ServiceMonitor 清单（`infra/k8s/observability/`） | 全量回归 |
+| P0-1 异步化热路径 | ⏳ 部分就绪 | 框架层全异步（Litestar/Granian + ASGI 中间件 + `sync_to_thread` 零阻塞事件循环）；DB 驱动层 async 改造需 aiosqlite/asyncmy + 真实压测环境，列为下一专项 | — |
+
+风控评分更新：**4.5 → 6.0**（重放攻击面关闭、分布式限流就绪、凭据明文清零；边缘 WAF/设备指纹/自适应验证码为 P1+ 外围设施）。项目群综合评分相应上调至 **6.7 / 10**。

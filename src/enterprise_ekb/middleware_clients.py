@@ -111,6 +111,10 @@ class HighPerformanceRedisClient:
         )
         self._client = redis_module.Redis(connection_pool=pool)
 
+    @property
+    def client(self):
+        return self._client
+
     def mget_json(self, keys: list[str]) -> list[dict[str, Any] | None]:
         values = self._client.mget(keys)
         result: list[dict[str, Any] | None] = []

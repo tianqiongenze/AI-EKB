@@ -49,6 +49,12 @@ class AppConfig:
     events_relay_batch_size_max: int
     datalake_allowed_topic_prefixes: list[str]
     datalake_allowed_table_prefixes: list[str]
+    rate_limit_backend: str
+    request_signing_secret: str
+    replay_window_seconds: int
+    jwt_hs256_secret: str
+    jwt_expected_audience: str
+    log_format: str
 
 
 def _parse_tenant_region_rate_limits(raw: str) -> dict[str, int]:
@@ -138,4 +144,10 @@ def load_config() -> AppConfig:
         datalake_allowed_table_prefixes=_parse_csv_list(
             os.getenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_")
         ),
+        rate_limit_backend=os.getenv("EKB_RATE_LIMIT_BACKEND", "memory"),
+        request_signing_secret=os.getenv("EKB_REQUEST_SIGNING_SECRET", ""),
+        replay_window_seconds=int(os.getenv("EKB_REPLAY_WINDOW_SECONDS", "300")),
+        jwt_hs256_secret=os.getenv("EKB_JWT_HS256_SECRET", ""),
+        jwt_expected_audience=os.getenv("EKB_JWT_EXPECTED_AUDIENCE", ""),
+        log_format=os.getenv("EKB_LOG_FORMAT", "text"),
     )

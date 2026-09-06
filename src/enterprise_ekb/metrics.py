@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import threading
 import time
+
+from enterprise_ekb.logging_setup import new_request_id, request_id_var
 from typing import Any, Iterable
 
 # Minimal ASGI typing aliases (avoids a hard dependency on any framework's types).
@@ -122,10 +124,15 @@ class HTTPMetricsMiddleware:
             return
         started = time.perf_counter()
         status_holder = {"status": 500}
+        request_id = new_request_id()
+        token = request_id_var.set(request_id)
 
         async def send_wrapper(message: Message) -> None:
             if message.get("type") == "http.response.start":
                 status_holder["status"] = int(message.get("status", 500))
+                headers = list(message.get("headers", []))
+                headers.append((b"x-request-id", request_id.encode("utf-8")))
+                message = dict(message, headers=headers)
             await send(message)
 
         try:
@@ -133,7 +140,9 @@ class HTTPMetricsMiddleware:
         except Exception:
             self._observe(scope, 500, started)
             raise
-        self._observe(scope, status_holder["status"], started)
+        finally:
+            self._observe(scope, status_holder["status"], started)
+            request_id_var.reset(token)
 
     def _observe(self, scope: Scope, status: int, started: float) -> None:
         path = scope.get("path_template") or scope.get("path_format")

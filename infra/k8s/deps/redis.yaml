@@ -16,6 +16,13 @@ spec:
       containers:
         - name: redis
           image: docker.io/redis:7.2-alpine
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: redis-password
+          command: ["sh", "-c", 'exec redis-server --requirepass "$REDIS_PASSWORD"']
           ports:
             - containerPort: 6379
           readinessProbe:

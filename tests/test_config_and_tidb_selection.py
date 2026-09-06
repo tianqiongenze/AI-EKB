@@ -1,13 +1,20 @@
 import os
 from pathlib import Path
 
+import pytest
 from litestar.testing import TestClient
 
 from enterprise_ekb.app import create_app
 
 
+@pytest.fixture(autouse=True)
+def _isolated_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep config-driven env mutations from leaking into sibling tests."""
+    monkeypatch.setenv("EKB_DB_DRIVER", "sqlite")
+    yield
+
+
 def test_readyz_reports_driver(tmp_path: Path) -> None:
-    os.environ["EKB_DB_DRIVER"] = "sqlite"
     db_path = tmp_path / "driver.db"
     app = create_app(db_path=str(db_path))
     client = TestClient(app)
@@ -18,7 +25,6 @@ def test_readyz_reports_driver(tmp_path: Path) -> None:
 
 
 def test_load_config_contains_middleware_defaults() -> None:
-    os.environ["EKB_DB_DRIVER"] = "sqlite"
     from enterprise_ekb.config import load_config
 
     cfg = load_config()
@@ -27,9 +33,8 @@ def test_load_config_contains_middleware_defaults() -> None:
     assert cfg.milvus_db_name == "default"
 
 
-def test_load_config_parses_tenant_region_rate_limits() -> None:
-    os.environ["EKB_DB_DRIVER"] = "sqlite"
-    os.environ["EKB_TENANT_REGION_RATE_LIMITS"] = "group:cn-north-1=12000,group:eu-central-1=9000"
+def test_load_config_parses_tenant_region_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EKB_TENANT_REGION_RATE_LIMITS", "group:cn-north-1=12000,group:eu-central-1=9000")
     from enterprise_ekb.config import load_config
 
     cfg = load_config()
@@ -37,10 +42,9 @@ def test_load_config_parses_tenant_region_rate_limits() -> None:
     assert cfg.tenant_region_rate_limits["group:eu-central-1"] == 9000
 
 
-def test_load_config_datalake_allowlists() -> None:
-    os.environ["EKB_DB_DRIVER"] = "sqlite"
-    os.environ["EKB_DATALAKE_ALLOWED_TOPIC_PREFIXES"] = "persistent://group/connectors/,persistent://group/a2a/"
-    os.environ["EKB_DATALAKE_ALLOWED_TABLE_PREFIXES"] = "ekb_,analytics_"
+def test_load_config_datalake_allowlists(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TOPIC_PREFIXES", "persistent://group/connectors/,persistent://group/a2a/")
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_,analytics_")
     from enterprise_ekb.config import load_config
 
     cfg = load_config()

@@ -13,10 +13,28 @@ spec:
       labels:
         app: pulsar-broker
     spec:
+      volumes:
+        - name: token-secret-key
+          secret:
+            secretName: ekb-deps-credentials
+            items:
+              - key: pulsar-token-secret-key
+                path: secret.key
       containers:
         - name: pulsar
           image: docker.io/apachepulsar/pulsar:3.2.3
           command: ["/pulsar/bin/pulsar", "standalone"]
+          env:
+            - name: PULSAR_PREFIX_authenticationEnabled
+              value: "true"
+            - name: PULSAR_PREFIX_authenticationProviders
+              value: org.apache.pulsar.broker.authentication.AuthenticationProviderToken
+            - name: PULSAR_PREFIX_tokenSecretKey
+              value: file:///pulsar/tokens/secret.key
+          volumeMounts:
+            - name: token-secret-key
+              mountPath: /pulsar/tokens
+              readOnly: true
           ports:
             - containerPort: 6650
             - containerPort: 8080

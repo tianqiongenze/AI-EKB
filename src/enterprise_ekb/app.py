@@ -11,6 +11,7 @@ from typing import Any
 from typing import cast
 
 from litestar import Litestar, Request, Response, get, post
+from litestar.middleware.base import DefineMiddleware
 from litestar.exceptions import HTTPException, ValidationException
 from litestar.status_codes import HTTP_422_UNPROCESSABLE_ENTITY
 import ipaddress
@@ -27,11 +28,18 @@ from enterprise_ekb.a2a_runtime import A2AConsumerConfig, build_a2a_consumer
 from enterprise_ekb.connectors import ConnectorRuntime
 from enterprise_ekb.config import load_config
 from enterprise_ekb.event_bus import InMemoryPublisher, OutboxRelay, PulsarPublisher
+from enterprise_ekb.logging_setup import configure_logging
 from enterprise_ekb.harness import HarnessGate
 from enterprise_ekb.domain_capability import DomainCapabilityService, default_domain_bootstrap
 from enterprise_ekb.mcp_gateway import MCPGateway
 from enterprise_ekb.policy import PolicyEngine
 from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
+from enterprise_ekb.risk_control import (
+    AntiReplayMiddleware,
+    DistributedRateLimiter,
+    NonceStore,
+    verify_bearer_credential,
+)
 from enterprise_ekb.schemas import (
     A2APriority,
     A2ASupervisionScanRequest,
@@ -85,8 +93,10 @@ from enterprise_ekb.tidb_store import TiDBControlPlaneStore
 from enterprise_ekb.middleware_clients import (
     HighPerformanceMilvusClient,
     HighPerformanceNeo4jClient,
+    HighPerformanceRedisClient,
     MilvusConfig,
     Neo4jConfig,
+    RedisConfig,
 )
 
 
@@ -126,6 +136,7 @@ def _run_with_retry(
 
 def create_app(db_path: str | None = None) -> Litestar:
     config = load_config()
+    configure_logging(config.log_format)
     resolved_db_path = db_path or config.db_path
     external_clients_enabled = os.getenv("EKB_ENABLE_EXTERNAL_CLIENTS", "false").lower() == "true"
 
@@ -168,9 +179,42 @@ def create_app(db_path: str | None = None) -> Litestar:
     tenant_region_mcp_limiter = TenantRegionRateLimiter(config.mcp_rate_limit_per_minute)
     tenant_region_a2a_limiter = TenantRegionRateLimiter(config.a2a_rate_limit_per_minute)
 
+    redis_backend = None
+    if config.rate_limit_backend.lower() == "redis":
+        try:
+            redis_backend = HighPerformanceRedisClient(
+                RedisConfig(
+                    url=config.redis_url,
+                    max_connections=config.redis_max_connections,
+                    socket_timeout_seconds=config.redis_socket_timeout_seconds,
+                    socket_connect_timeout_seconds=config.redis_socket_connect_timeout_seconds,
+                )
+            ).client
+        except Exception:
+            _logger.warning("Redis rate-limit backend init failed; falling back to in-memory limits", exc_info=True)
+            redis_backend = None
+    distributed_mcp_limiter = (
+        DistributedRateLimiter(config.mcp_rate_limit_per_minute, redis_client=redis_backend)
+        if redis_backend is not None
+        else None
+    )
+    distributed_a2a_limiter = (
+        DistributedRateLimiter(config.a2a_rate_limit_per_minute, redis_client=redis_backend)
+        if redis_backend is not None
+        else None
+    )
+    nonce_store = NonceStore(ttl_seconds=config.replay_window_seconds, redis_client=redis_backend)
+
     def _bearer_matches(request: Request) -> bool:
         auth_header = request.headers.get("authorization", "")
-        return secrets.compare_digest(auth_header, f"Bearer {config.auth_token}")
+        if secrets.compare_digest(auth_header, f"Bearer {config.auth_token}"):
+            return True
+        return verify_bearer_credential(
+            auth_header,
+            config.auth_token,
+            config.jwt_hs256_secret,
+            config.jwt_expected_audience,
+        )
 
     auth_disabled_warning_emitted = False
 
@@ -187,7 +231,7 @@ def create_app(db_path: str | None = None) -> Litestar:
                 auth_disabled_warning_emitted = True
             return ""
         auth_header = request.headers.get("authorization", "")
-        if not secrets.compare_digest(auth_header, f"Bearer {config.auth_token}"):
+        if not _bearer_matches(request):
             raise HTTPException(status_code=401, detail="unauthorized")
         return auth_header
 
@@ -420,6 +464,12 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
         if not tenant_region_limit.allowed:
             raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        if distributed_mcp_limiter is not None:
+            if not distributed_mcp_limiter.allow(
+                f"mcp:{data.tenant_id}:{data.region_id}",
+                limit=tenant_region_override or config.mcp_rate_limit_per_minute,
+            ):
+                raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
         response = _run_with_retry(
             lambda: mcp_gateway.invoke(data),
             attempts=config.mcp_invoke_retry_attempts,
@@ -716,6 +766,12 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
         if not tenant_region_limit.allowed:
             raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        if distributed_a2a_limiter is not None:
+            if not distributed_a2a_limiter.allow(
+                f"a2a:{data.tenant_id}:{data.region_id}",
+                limit=tenant_region_override or config.a2a_rate_limit_per_minute,
+            ):
+                raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
         event_payload = {
             "tenant_id": data.tenant_id,
             "region_id": data.region_id,
@@ -800,6 +856,12 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
         if not tenant_region_limit.allowed:
             raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        if distributed_a2a_limiter is not None:
+            if not distributed_a2a_limiter.allow(
+                f"a2a:{data.tenant_id}:{data.region_id}",
+                limit=tenant_region_override or config.a2a_rate_limit_per_minute,
+            ):
+                raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
         store.enqueue_outbox(
             event_type="flywheel.event.recorded",
             payload={
@@ -846,6 +908,12 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
         if not tenant_region_limit.allowed:
             raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        if distributed_a2a_limiter is not None:
+            if not distributed_a2a_limiter.allow(
+                f"a2a:{data.tenant_id}:{data.region_id}",
+                limit=tenant_region_override or config.a2a_rate_limit_per_minute,
+            ):
+                raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
         store.enqueue_outbox(
             event_type="a2a.message",
             payload={
@@ -886,6 +954,12 @@ def create_app(db_path: str | None = None) -> Litestar:
         )
         if not tenant_region_limit.allowed:
             raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        if distributed_a2a_limiter is not None:
+            if not distributed_a2a_limiter.allow(
+                f"a2a:{data.tenant_id}:{data.region_id}",
+                limit=tenant_region_override or config.a2a_rate_limit_per_minute,
+            ):
+                raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
 
         tenant_id = data.tenant_id
         idempotency_key = data.idempotency_key or data.task_id or uuid.uuid4().hex
@@ -1334,7 +1408,15 @@ def create_app(db_path: str | None = None) -> Litestar:
             check_connector_health,
             pull_connector,
         ],
-        middleware=[HTTPMetricsMiddleware],
+        middleware=[
+            HTTPMetricsMiddleware,
+            DefineMiddleware(
+                AntiReplayMiddleware,
+                secret=config.request_signing_secret,
+                window_seconds=config.replay_window_seconds,
+                nonce_store=nonce_store,
+            ),
+        ],
         openapi_config=None,
         exception_handlers={ValidationException: _validation_exception_to_422},
     )

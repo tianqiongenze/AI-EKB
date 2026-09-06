@@ -1,13 +1,18 @@
 import os
 from pathlib import Path
 
+import pytest
 from litestar.testing import TestClient
 
 from enterprise_ekb.app import create_app
 
 
-def test_register_datalake_table_pipeline_and_flywheel_event(tmp_path: Path) -> None:
-    os.environ["EKB_AUTH_TOKEN"] = "test-token"
+def test_register_datalake_table_pipeline_and_flywheel_event(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("EKB_AUTH_TOKEN", "test-token")
+    monkeypatch.setenv(
+        "EKB_DATALAKE_ALLOWED_TOPIC_PREFIXES", "persistent://group/control/,persistent://group/connectors/"
+    )
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_")
     db_path = tmp_path / "lakehouse_flywheel.db"
     client = TestClient(create_app(db_path=str(db_path)))
     headers = {"Authorization": "Bearer test-token"}

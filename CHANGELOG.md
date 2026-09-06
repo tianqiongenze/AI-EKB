@@ -2,6 +2,29 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09 P0 风控与可靠性加固
+
+### Security
+
+- **防重放**：新增 `risk_control.AntiReplayMiddleware`（纯 ASGI）——HMAC-SHA256 请求签名（method+path+timestamp+nonce+body 摘要）、±300s 时间窗、Redis/内存单次 nonce 去重；`EKB_REQUEST_SIGNING_SECRET` 配置即启用，默认关闭零开销。
+- **JWT 认证**：`verify_bearer_credential` 统一 admin/connector/业务三条鉴权路径——静态 Token 常量时比较 + HS256 JWT（exp 必验、aud 可选），静态 Token 向后兼容。
+- **凭据整改**（P0-5）：neo4j 明文凭据改 secretKeyRef；redis `--requirepass` 注入；pulsar-standalone 启用 token 认证；milvus 启用 authorizationEnabled、minio 双键 secret 化；新增 `credentials-secret.example.yaml` 模板。
+
+### Added
+
+- **分布式限流**（P0-2a）：`DistributedRateLimiter`——Redis Lua 原子滑动窗口，故障自动降级内存滑窗；MCP/A2A 五个热点端点接入两级限流（`EKB_RATE_LIMIT_BACKEND=redis` 启用）。
+- **结构化日志**（P0-6）：`logging_setup`——`EKB_LOG_FORMAT=json` 输出含 request_id 的 JSON 日志；ASGI 中间件生成 request_id 并回写 `X-Request-ID`；新增 Prometheus ServiceMonitor 清单。
+- 新配置项：`EKB_RATE_LIMIT_BACKEND` / `EKB_REQUEST_SIGNING_SECRET` / `EKB_REPLAY_WINDOW_SECONDS` / `EKB_JWT_HS256_SECRET` / `EKB_JWT_EXPECTED_AUDIENCE` / `EKB_LOG_FORMAT`（env.*.example 同步）。
+
+### Fixed
+
+- **Outbox 原子认领**（P0-3）：SQLite store 与 TiDB store 对齐为单条原子 UPDATE，删除进程内锁依赖，多实例 relay 不再可能重复认领。
+- 修复既有测试环境变量泄漏（`test_config_and_tidb_selection` 裸 `os.environ` 污染下游用例），受影响测试改为显式自设白名单。
+
+### Test
+
+- 测试基线：62 → **68 项**全绿；四道门禁持续通过。风控专项 6 项新测试（签名缺失/过期/坏签名/重放/放行、JWT 有效/过期/错 aud、分布式限流突发拒绝与降级）。
+
 ## [Unreleased] — 2026-09 框架迁移：FastAPI → Litestar + Granian
 
 ### Changed（Breaking / 框架级）

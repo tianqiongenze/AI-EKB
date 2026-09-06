@@ -38,7 +38,9 @@ def test_metrics_endpoint_rejects_garbage_path_label_cardinality(tmp_path: Path)
     assert "no-such-route-xyz" not in body
 
 
-def test_protected_endpoint_rejects_missing_and_wrong_token(auth_env, tmp_path: Path) -> None:
+def test_protected_endpoint_rejects_missing_and_wrong_token(auth_env, monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TOPIC_PREFIXES", "persistent://group/control/,persistent://group/connectors/")
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_")
     client = TestClient(create_app(db_path=str(tmp_path / "auth1.db")))
     payload = {
         "table_name": "ekb_test_table",
@@ -58,7 +60,9 @@ def test_protected_endpoint_rejects_missing_and_wrong_token(auth_env, tmp_path: 
     assert wrong.status_code == 401
 
 
-def test_protected_endpoint_accepts_correct_token(auth_env, tmp_path: Path) -> None:
+def test_protected_endpoint_accepts_correct_token(auth_env, monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TOPIC_PREFIXES", "persistent://group/control/,persistent://group/connectors/")
+    monkeypatch.setenv("EKB_DATALAKE_ALLOWED_TABLE_PREFIXES", "ekb_")
     client = TestClient(create_app(db_path=str(tmp_path / "auth2.db")))
     resp = client.post(
         "/datalake/tables/register",

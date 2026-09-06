@@ -6,12 +6,13 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **62 / 62 通过** | Python 全量回归（迁移后） |
+| 测试 | **68 / 68 通过** | Python 全量回归（含风控专项） |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **36 个** | OpenAPI 契约 1:1 对齐（AST 门禁强制） |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
-| 架构评审 | **6.5 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
+| 架构评审 | **6.7 / 10** | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 | K8s / Helm / Kustomize / Compose / 裸机一键 |
 
@@ -302,6 +303,12 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 | `EKB_AUTH_TOKEN` | `` | `<from-secret>` | MCP/A2A 认证 Token |
 | `EKB_MCP_RATE_LIMIT_PER_MINUTE` | `6000` | `6000` | MCP 速率限制 |
 | `EKB_A2A_RATE_LIMIT_PER_MINUTE` | `12000` | `12000` | A2A 速率限制 |
+| `EKB_RATE_LIMIT_BACKEND` | `memory` | `redis` | 分布式限流后端（Redis 滑窗，故障降级内存） |
+| `EKB_REQUEST_SIGNING_SECRET` | `` | `<from-secret>` | HMAC 请求签名密钥（防重放，空=关闭） |
+| `EKB_REPLAY_WINDOW_SECONDS` | `300` | `300` | 签名时间窗 |
+| `EKB_JWT_HS256_SECRET` | `` | `<from-secret>` | JWT HS256 校验密钥（与静态 Token 并存） |
+| `EKB_JWT_EXPECTED_AUDIENCE` | `` | `ekb-control-plane` | JWT 受众校验 |
+| `EKB_LOG_FORMAT` | `text` | `json` | 结构化日志（含 request_id 贯穿） |
 
 ### 6.2 Go Gateway
 

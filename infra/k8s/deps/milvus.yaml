@@ -31,9 +31,15 @@ spec:
             - :9001
           env:
             - name: MINIO_ROOT_USER
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: minio-access-key
             - name: MINIO_ROOT_PASSWORD
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: minio-secret-key
           ports:
             - containerPort: 9000
             - containerPort: 9001
@@ -115,9 +121,17 @@ spec:
             - name: MINIO_ADDRESS
               value: milvus-minio:9000
             - name: MINIO_ACCESS_KEY_ID
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: minio-access-key
             - name: MINIO_SECRET_ACCESS_KEY
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: minio-secret-key
+            - name: COMMON_SECURITY_AUTHORIZATIONENABLED
+              value: "true"
             - name: MINIO_USE_SSL
               value: "false"
           ports:

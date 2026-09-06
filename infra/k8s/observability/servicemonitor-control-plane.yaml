@@ -1,0 +1,18 @@
+# Prometheus Operator ServiceMonitor for the control plane (review P0-6).
+# Scrapes GET /metrics (Prometheus text exposition) from the control-plane Service.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ekb-control-plane
+  namespace: ekb-control-plane
+  labels:
+    app: ekb-control-plane
+spec:
+  selector:
+    matchLabels:
+      app: ekb-control-plane
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 5s

@@ -19,7 +19,10 @@ spec:
           image: docker.io/neo4j:5.25.1-community-bullseye
           env:
             - name: NEO4J_AUTH
-              value: neo4j/neo4j-password-1
+              valueFrom:
+                secretKeyRef:
+                  name: ekb-deps-credentials
+                  key: neo4j-auth
             - name: NEO4J_server_config_strict__validation_enabled
               value: "false"
           ports:
