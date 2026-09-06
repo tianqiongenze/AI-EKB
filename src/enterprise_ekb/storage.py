@@ -730,8 +730,12 @@ class SQLiteControlPlaneStore:
             clauses.append("domain = ?")
             params.append(domain.value)
         if query:
-            clauses.append("(title LIKE ? OR description LIKE ? OR capability_type LIKE ?)")
-            like = f"%{query}%"
+            # Escape LIKE wildcards so user input cannot widen the match (\ is the escape char).
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            clauses.append(
+                "(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR capability_type LIKE ? ESCAPE '\\')"
+            )
+            like = f"%{escaped}%"
             params.extend([like, like, like])
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)

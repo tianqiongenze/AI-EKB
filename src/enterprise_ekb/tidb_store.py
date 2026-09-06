@@ -798,8 +798,12 @@ class TiDBControlPlaneStore(SQLiteControlPlaneStore):
             clauses.append("domain = %s")
             params.append(domain.value)
         if query:
-            clauses.append("(title LIKE %s OR description LIKE %s OR capability_type LIKE %s)")
-            like = f"%{query}%"
+            # Escape LIKE wildcards so user input cannot widen the match (\ is the escape char).
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            clauses.append(
+                "(title LIKE %s ESCAPE '\\' OR description LIKE %s ESCAPE '\\' OR capability_type LIKE %s ESCAPE '\\')"
+            )
+            like = f"%{escaped}%"
             params.extend([like, like, like])
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)

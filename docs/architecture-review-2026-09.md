@@ -279,3 +279,32 @@ flowchart LR
 | P0-1 异步化热路径 | ⏳ 部分就绪 | 框架层全异步（Litestar/Granian + ASGI 中间件 + `sync_to_thread` 零阻塞事件循环）；DB 驱动层 async 改造需 aiosqlite/asyncmy + 真实压测环境，列为下一专项 | — |
 
 风控评分更新：**4.5 → 6.0**（重放攻击面关闭、分布式限流就绪、凭据明文清零；边缘 WAF/设备指纹/自适应验证码为 P1+ 外围设施）。项目群综合评分相应上调至 **6.7 / 10**。
+
+## 15. 第三轮落地：多级缓存 + create_app 拆分（2026-09，72/72 测试 + 四门禁通过）
+
+### 15.1 多级缓存启用（评审 §10.1 方案落地，命中率 0 → 可度量）
+
+- 新增 `cache.MultiLevelCache`：L1 进程内 TTL+LRU（默认 60s/10k 项）+ L2 Redis JSON（`EKB_CACHE_BACKEND=redis`，默认 300s），L2 故障自动降级。
+- 接入点：策略判定缓存（key 含 **registry epoch**，skill 注册/晋级即失效——晋级后允许判定零延迟生效，测试固化）、域能力 search/coverage（upsert/bootstrap 前缀失效，防陈旧读测试固化）、向量检索结果（upsert 前缀失效）。
+- 命中率可观测：`ekb_cache_hits_total{layer}` / `ekb_cache_misses_total` / `ekb_cache_invalidations_total` 进 `/metrics`，评审设定的"0%→≥55%"目标自此有度量口径。
+
+### 15.2 create_app 拆分（P1 结构欠账 #1 清偿，DDD 载体落地）
+
+| 项 | 拆分前 | 拆分后 |
+|---|---|---|
+| app.py | 1434 行（36 路由 + 全部装配 + 闭包） | **75 行纯装配层** |
+| 路由组织 | 单体闭包 | `api/` 包 10 个限界上下文模块：health / observability / skills / mcp / governance / a2a / subagent / dataops / domain / connectors |
+| 共享依赖 | 闭包变量 | `api/context.py`：`ControlPlaneContext` + `build_context()`（基础设施/服务装配）+ 鉴权与校验方法 |
+| 契约门禁 | 仅扫 app.py | 扩展扫描 `api/*.py`（路由 + Outbox 事件类型），36 路由 / 17 事件契约继续 1:1 强制 |
+
+### 15.3 风控小修补（P0 遗留尾项）
+
+- LIKE 通配符转义（`\` + ESCAPE 子句，SQLite/TiDB 双方言），用户输入无法加宽匹配。
+- 连接器假时间戳（硬编码 `occurred_at="2026-03-30"`) → 真实时钟 UTC。
+- 连接器 HTTP 客户端显式 `follow_redirects=False`（SSRF 纵深防御：重定向不得绕过 CIDR 校验）。
+
+### 15.4 P0-1 异步化决策记录
+
+判定：**框架层已全异步**（Litestar 事件循环零阻塞 + `sync_to_thread` 工作线程执行 + 纯 ASGI 中间件）；进一步收益在 **DB 驱动层 async 化（aiosqlite/asyncmy）**，但存储层同时被同步消费者使用（OutboxRelay、A2A 消费线程），直接改 async 会破坏其契约。路线：P1.5 先将 relay/消费者改造为异步任务化，随后存储层提供 async 门面（async 门面 + to_thread 过渡 → 原生 async 驱动），需配合真实 TiDB 压测环境验收。**不做无压测验收的假异步改造。**
+
+综合评分更新：工程质量 5.5 → **7.0**（结构欠账清偿），可扩展性 4.5 → **5.0**（缓存层就绪）。项目群综合 **6.7 → 6.9 / 10**。

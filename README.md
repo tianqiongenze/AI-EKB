@@ -6,9 +6,9 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **68 / 68 通过** | Python 全量回归（含风控专项） |
+| 测试 | **72 / 72 通过** | Python 全量回归（缓存/拆分后） |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
-| API 路由 | **36 个** | OpenAPI 契约 1:1 对齐（AST 门禁强制） |
+| API 路由 | **36 个 / 10 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐 |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |

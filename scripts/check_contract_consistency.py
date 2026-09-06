@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_FILE = ROOT / "src" / "enterprise_ekb" / "app.py"
+API_PACKAGE_DIR = ROOT / "src" / "enterprise_ekb" / "api"
 OPENAPI_FILE = ROOT / "contracts" / "openapi" / "control-plane.openapi.yaml"
 PULSAR_FILE = ROOT / "contracts" / "pulsar-topics.yaml"
 A2A_PROTOCOL_FILE = ROOT / "contracts" / "a2a-protocol.yaml"
@@ -38,6 +39,14 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 
 def _extract_app_routes_from_ast(path: Path) -> set[RouteContract]:
+    routes: set[RouteContract] = set()
+    paths = [path, *sorted(API_PACKAGE_DIR.glob("*.py"))] if API_PACKAGE_DIR.exists() else [path]
+    for path in paths:
+        routes |= _extract_routes_from_file(path)
+    return routes
+
+
+def _extract_routes_from_file(path: Path) -> set[RouteContract]:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     routes: set[RouteContract] = set()
 
@@ -93,6 +102,14 @@ def _extract_openapi_routes(path: Path) -> set[RouteContract]:
 
 
 def _extract_outbox_event_types_from_ast(path: Path) -> set[str]:
+    event_types: set[str] = set()
+    paths = [path, *sorted(API_PACKAGE_DIR.glob("*.py"))] if API_PACKAGE_DIR.exists() else [path]
+    for path in paths:
+        event_types |= _extract_outbox_events_from_file(path)
+    return event_types
+
+
+def _extract_outbox_events_from_file(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     event_types: set[str] = set()
 

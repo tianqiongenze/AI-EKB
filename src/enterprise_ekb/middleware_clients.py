@@ -52,7 +52,7 @@ class HttpAdapter:
         self._timeout_ms = timeout_ms
         self._retry = retry or HttpRetryConfig()
         httpx_module = importlib.import_module("httpx")
-        self._client = httpx_module.Client(timeout=timeout_ms / 1000)
+        self._client = httpx_module.Client(timeout=timeout_ms / 1000, follow_redirects=False)
 
     def get(
         self,

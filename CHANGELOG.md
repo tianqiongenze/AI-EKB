@@ -2,6 +2,24 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09 多级缓存 + create_app 拆分（专项 B/C/D）
+
+### Added
+
+- **多级缓存**（评审 §10.1 落地）：`cache.MultiLevelCache`（L1 TTL+LRU / L2 Redis，故障降级），接入策略判定（registry epoch 失效）、域能力 search/coverage（写路径前缀失效）、向量检索；命中率指标进 /metrics（`ekb_cache_hits_total` 等）。
+- **create_app 拆分**（P1 结构欠账清偿）：app.py 1434 行 → 75 行装配层；36 个路由按限界上下文迁入 `api/` 包 10 个模块；共享依赖收敛为 `api/context.py`（`ControlPlaneContext` + `build_context`）；契约门禁扩展扫描 `api/*.py`。
+- 4 项缓存测试（含策略晋级即时生效、域能力防陈旧读回归）。
+
+### Fixed
+
+- LIKE 通配符转义（SQLite/TiDB 双方言，`ESCAPE '\'`），封堵用户输入加宽匹配。
+- 连接器硬编码假时间戳改为真实 UTC 时钟。
+- 连接器 HTTP 客户端显式 `follow_redirects=False`（SSRF 纵深）。
+
+### Test
+
+- 基线 68 → **72 项**全绿；四道门禁通过；契约 36 路由 / 17 事件继续强制对齐。
+
 ## [Unreleased] — 2026-09 P0 风控与可靠性加固
 
 ### Security

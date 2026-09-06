@@ -105,7 +105,7 @@ class BaseConnector:
                     region_id="cn-north-1",
                     source_id=f"{self.system.value}-{profile.profile_name}",
                     event_type=f"{self.system.value}.entity.changed",
-                    occurred_at="2026-03-30T00:00:00Z",
+                    occurred_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     idempotency_key=f"{self.system.value}:{profile.profile_name}:{offset}",
                     payload={
                         "profile": profile.profile_name,
