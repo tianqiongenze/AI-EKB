@@ -6,13 +6,13 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **83 Python + 11 Java + 8 前端组件** | 全栈测试矩阵 |
+| 测试 | **88 Python + 11 Java + 8 前端组件** | 全栈测试矩阵 |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **37 个 / 11 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐（含 /retrieval/hybrid） |
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **7.3 / 10** |（八特性国标矩阵见评审 §18.2）| 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 架构评审 | **7.5 / 10**（9.5+ 需生产实证，路径见评审 §21） | 八特性国标矩阵见 §18.2 | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
 | 前端多端 | admin M1.5 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 49.9KB）+ `web/mobile`（uni-app，鸿蒙路线） |

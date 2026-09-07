@@ -58,3 +58,18 @@ def test_etag_304_on_readyz_and_metrics(tmp_path: Path) -> None:
         assert etag, f"{path} must expose ETag"
         again = client.get(path, headers={"If-None-Match": etag})
         assert again.status_code == 304, f"{path} must answer 304 on matching If-None-Match"
+
+
+def test_trace_context_propagation(tmp_path: Path) -> None:
+    import re as _re
+
+    client = TestClient(create_app(db_path=str(tmp_path / "trace.db")))
+    # Upstream traceparent must be honored end-to-end.
+    inbound = "00-11111111111111111111111111111111-2222222222222222-01"
+    r1 = client.get("/readyz", headers={"traceparent": inbound})
+    assert r1.headers["traceparent"].startswith(f"00-{'1' * 32}-"), "upstream trace_id must be preserved"
+    # Absent header: a valid traceparent is derived.
+    r2 = client.get("/readyz")
+    parts = r2.headers["traceparent"].split("-")
+    assert len(parts) == 4 and len(parts[1]) == 32 and len(parts[2]) == 16
+    assert _re.fullmatch(r"[0-9a-f-]+", r2.headers["traceparent"])

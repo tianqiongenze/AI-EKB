@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import threading
 import time
+import uuid
 
 from enterprise_ekb.logging_setup import new_request_id, request_id_var
 from typing import Any, Iterable
@@ -128,12 +129,20 @@ class HTTPMetricsMiddleware:
         status_holder = {"status": 500}
         request_id = new_request_id()
         token = request_id_var.set(request_id)
+        # W3C trace context: honor an upstream traceparent, else derive one.
+        inbound = next(
+            (v.decode("latin-1") for k, v in scope.get("headers", []) if k == b"traceparent"), ""
+        )
+        trace_id = inbound.split("-")[1][:32] if inbound.count("-") >= 3 and len(inbound.split("-")[1]) == 32 else uuid.uuid4().hex
+        span_id = uuid.uuid4().hex[:16]
+        traceparent = f"00-{trace_id}-{span_id}-01"
 
         async def send_wrapper(message: Message) -> None:
             if message.get("type") == "http.response.start":
                 status_holder["status"] = int(message.get("status", 500))
                 headers = list(message.get("headers", []))
                 headers.append((b"x-request-id", request_id.encode("utf-8")))
+                headers.append((b"traceparent", traceparent.encode("latin-1")))
                 message = dict(message, headers=headers)
             await send(message)
 

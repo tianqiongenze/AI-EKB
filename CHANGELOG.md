@@ -2,6 +2,17 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 七轮：W3C trace 传播
+
+### Added
+
+- W3C trace context：上游 `traceparent` 保留（32 位 trace_id 端到端贯穿）、缺失时派生合法 traceparent；随 `X-Request-ID` 一同回写响应头。
+- 评审 §21：通往 9.5-10 的分段实证路径（压测/生产运行/认证审计三段，明确不可在本环境生成项）。
+
+### Test
+
+- 基线 87 → **88 项**全绿（trace 传播 ×2 断言）；综合 7.4 → **7.5**（代码侧可完成项已基本清偿）。
+
 ## [Unreleased] — 2026-09-07 读写分离/消费幂等/ETag + ADR 档案
 
 ### Added
