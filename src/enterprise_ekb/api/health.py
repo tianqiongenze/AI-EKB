@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import time
 import uuid
@@ -64,7 +65,7 @@ def routes(ctx: ControlPlaneContext) -> list:
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
     @get("/readyz", sync_to_thread=True)
-    def readyz() -> dict[str, object]:
+    def readyz(request: Request) -> Response | dict[str, object]:
         publisher_backend = ctx.publisher.__class__.__name__
         event_backend_mismatch = (
             ctx.config.event_publisher_backend.lower() == "pulsar"
@@ -72,7 +73,7 @@ def routes(ctx: ControlPlaneContext) -> list:
         )
         if os.getenv("EKB_ENV", "").lower() == "production" and event_backend_mismatch:
             raise HTTPException(status_code=503, detail="event_backend_mismatch")
-        return {
+        body = {
             "status": "ready",
             "db_driver": ctx.config.db_driver,
             "db_path": ctx.resolved_db_path,
@@ -81,4 +82,8 @@ def routes(ctx: ControlPlaneContext) -> list:
             "outbox_claim_instance": ctx.store.outbox_claim_instance_id(),
             "outbox": ctx.store.outbox_stats(),
         }
+        etag = hashlib.sha256(repr(body).encode("utf-8")).hexdigest()[:16]
+        if request.headers.get("if-none-match") == f'"{etag}"':
+            return Response(content=b"", status_code=304)
+        return Response(content=body, headers={"ETag": f'"{etag}"'})
     return [healthz, readyz]

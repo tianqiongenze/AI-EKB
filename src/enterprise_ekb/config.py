@@ -60,6 +60,8 @@ class AppConfig:
     log_format: str
     relay_background_enabled: bool
     relay_interval_seconds: float
+    read_replica_db_path: str
+    tidb_read_host: str
 
 
 def _parse_tenant_region_rate_limits(raw: str) -> dict[str, int]:
@@ -160,4 +162,6 @@ def load_config() -> AppConfig:
         log_format=os.getenv("EKB_LOG_FORMAT", "text"),
         relay_background_enabled=os.getenv("EKB_RELAY_BACKGROUND_ENABLED", "false").lower() == "true",
         relay_interval_seconds=float(os.getenv("EKB_RELAY_INTERVAL_SECONDS", "5")),
+        read_replica_db_path=os.getenv("EKB_READ_REPLICA_DB_PATH", ""),
+        tidb_read_host=os.getenv("EKB_TIDB_READ_HOST", ""),
     )

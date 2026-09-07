@@ -119,7 +119,9 @@ class HTTPMetricsMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http":
+        if scope.get("type") != "http" or scope.get("path") == "/metrics":
+            # /metrics is exempt from self-observation: observing the scrape
+            # would change the very body it renders (self-referential churn).
             await self.app(scope, receive, send)
             return
         started = time.perf_counter()

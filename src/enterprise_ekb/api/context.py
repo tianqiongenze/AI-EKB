@@ -32,7 +32,7 @@ from enterprise_ekb.policy import PolicyEngine
 from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
 from enterprise_ekb.risk_control import DistributedRateLimiter
 from enterprise_ekb.skill_registry import SkillRegistry
-from enterprise_ekb.storage import SQLiteControlPlaneStore
+from enterprise_ekb.storage import ReplicaRoutingStore, SQLiteControlPlaneStore
 from enterprise_ekb.tidb_store import TiDBControlPlaneStore
 from enterprise_ekb.middleware_clients import (
     HighPerformanceMilvusClient,
@@ -294,6 +294,24 @@ def build_context(config: AppConfig, db_path: str | None = None) -> ControlPlane
     else:
         publisher = InMemoryPublisher()
     outbox_relay = OutboxRelay(store=store, publisher=publisher)
+    # Read-write separation (review §10): handlers/queries route reads to the
+    # replica; the relay above deliberately keeps the primary store.
+    if config.db_driver.lower() == "sqlite" and config.read_replica_db_path:
+        store = ReplicaRoutingStore(
+            primary=store,
+            replica=SQLiteControlPlaneStore(db_path=config.read_replica_db_path),
+        )
+    elif config.db_driver.lower() == "tidb" and config.tidb_read_host:
+        store = ReplicaRoutingStore(
+            primary=store,
+            replica=TiDBControlPlaneStore(
+                host=config.tidb_read_host,
+                port=config.tidb_port,
+                user=config.tidb_user,
+                password=config.tidb_password,
+                database=config.tidb_database,
+            ),
+        )
     domain_capability_service = DomainCapabilityService(store=store, cache=cache)
     connector_runtime = ConnectorRuntime(store=store)
     mcp_rate_limiter = TokenBucketRateLimiter(config.mcp_rate_limit_per_minute)

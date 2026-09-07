@@ -1270,3 +1270,30 @@ class SQLiteControlPlaneStore:
             updated_at=str(row["updated_at"]),
             completed_at=row["completed_at"],
         )
+
+class ReplicaRoutingStore:
+    """Read/write routing wrapper: read methods go to the replica, the rest to primary.
+
+    Implements the read-write separation layer (review §10): with SQLite both
+    stores share one file (no lag); with TiDB the replica is a follower
+    endpoint (eventual consistency, configurable via EKB_TIDB_READ_HOST).
+    The outbox relay must keep using the primary store directly.
+    """
+
+    READ_METHODS = frozenset({
+        "list_skills",
+        "get_sub_agent_task",
+        "list_sub_agent_tasks_by_supervisor",
+        "recent_audits",
+        "list_business_capabilities",
+        "outbox_stats",
+        "outbox_claim_instance_id",
+    })
+
+    def __init__(self, primary: Any, replica: Any) -> None:
+        self._primary = primary
+        self._replica = replica
+
+    def __getattr__(self, name: str) -> Any:
+        target = self._replica if name in ReplicaRoutingStore.READ_METHODS else self._primary
+        return getattr(target, name)

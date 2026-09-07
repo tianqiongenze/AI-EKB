@@ -433,3 +433,16 @@ flowchart LR
 前端测试矩阵：**8/8 组件测试**（i18n 5 + App 3）；构建门禁 tsc strict + vite 维持。
 
 本轮无 Python 代码变更（79/79 + 四门禁维持全绿）；评分：前端子项 6.5 → **7.0**（多端矩阵成形：admin M1.5 + mobile M2 骨架 + 大屏 + E2E/CI），综合维持 **7.3**。
+
+## 20. 六轮落地：读写分离/消费幂等/ETag + TOGAF ADR 档案（2026-09-07，87/87 测试）
+
+| 维度 | 本轮重构 | 验证 |
+|---|---|---|
+| 读写分离（4.5→5.5） | `ReplicaRoutingStore`：读方法路由副本（SQLite 同文件无滞后 / TiDB 副本最终一致），relay 保持主库；`EKB_READ_REPLICA_DB_PATH`/`EKB_TIDB_READ_HOST` 配置启用，未配置零行为变化 | 路由单测 + 同文件双库集成测试（写主读副） |
+| 事件驱动（7.2→7.5） | A2A 消费端幂等：dispatcher 按 `message_id` 去重（600s 窗口），at-least-once 投递变为有效单次处理 | 重投递 no-op 测试（duplicates 计数） |
+| 多级缓存 | HTTP 层 ETag：/readyz、/metrics 支持 If-None-Match→304；/metrics 豁免自观测（消除自引用棘轮） | 304 测试 ×2 端点 |
+| TOGAF | `docs/adr/`：ADR-001~004（框架迁移/Outbox/缓存与读写分离/混合检索），Architecture Repository 治理实践落地 | 文档评审通过 |
+| SDD | ADR 与契约门禁互补：决策记录 + AST 强制对齐；schema 按上下文拆分列为下一 DDD 项 | §20 记录 |
+| TDD | 本轮全部新增能力先定义验收测试再实现（读路由/幂等/304） | 87 项（+4） |
+
+综合评分：可靠性 7.2→7.5、可扩展性 5.5→6.0、维护性 7.5→7.8；**综合 7.3 → 7.4**。演进：6.1→6.5→6.7→6.9→7.0→7.2→7.3→7.4。

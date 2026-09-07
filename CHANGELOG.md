@@ -2,6 +2,19 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-07 读写分离/消费幂等/ETag + ADR 档案
+
+### Added
+
+- **读写分离**：`ReplicaRoutingStore` 读方法路由副本（SQLite 同文件 / TiDB 副本经 `EKB_TIDB_READ_HOST`），relay 保持主库；未配置零行为变化。
+- **A2A 消费幂等**：dispatcher 按 message_id 去重（600s 窗口），at-least-once 投递有效单次处理，duplicates 计数。
+- **HTTP 缓存**：/readyz 与 /metrics 支持 ETag/If-None-Match→304；/metrics 豁免自观测（消除自引用棘轮）。
+- **TOGAF ADR 档案**：`docs/adr/` ADR-001~004。
+
+### Test
+
+- 基线 83 → **87 项**全绿（路由拆分/同文件双库/重投递/304 ×2 端点）；四门禁通过；综合 7.3 → **7.4**。
+
 ## [Unreleased] — 2026-09-07 前端多端并行落地
 
 ### Added

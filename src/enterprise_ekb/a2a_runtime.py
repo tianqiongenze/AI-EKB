@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -22,18 +23,41 @@ class A2AConsumerConfig:
 
 
 class A2ADispatcher:
-    def __init__(self) -> None:
+    """Dispatches payloads by intent with message-id dedup.
+
+    Pulsar delivery is at-least-once (negative-ack retry); the dedup window
+    turns redelivery into a no-op for handlers keyed by message_id.
+    """
+
+    def __init__(self, dedup_ttl_seconds: int = 600) -> None:
         self._handlers: dict[str, Callable[[dict[str, Any]], None]] = {}
+        self._dedup_ttl_seconds = dedup_ttl_seconds
+        self._seen: dict[str, float] = {}
+        self.duplicates = 0
 
     def register(self, intent: str, handler: Callable[[dict[str, Any]], None]) -> None:
         self._handlers[intent] = handler
 
-    def dispatch(self, payload: dict[str, Any]) -> None:
+    def _mark_message(self, message_id: str) -> bool:
+        now = time.monotonic()
+        for key in [k for k, exp in self._seen.items() if exp <= now]:
+            self._seen.pop(key, None)
+        if message_id in self._seen:
+            return False
+        self._seen[message_id] = now + self._dedup_ttl_seconds
+        return True
+
+    def dispatch(self, payload: dict[str, Any]) -> bool:
+        message_id = str(payload.get("message_id", ""))
+        if message_id and not self._mark_message(message_id):
+            self.duplicates += 1
+            return False
         intent = str(payload.get("intent", ""))
         handler = self._handlers.get(intent)
         if handler is None:
             raise ValueError(f"no handler registered for intent: {intent}")
         handler(payload)
+        return True
 
 
 class A2AConsumer:
