@@ -2,6 +2,21 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-20 CRDB 数据面真机部署（八轮）
+
+### Added
+
+- **CRDB 数据面**（ADR-005，对齐 ESP ADR-24）：`crdb_store.py`（PG 方言 + follower-read SET TRANSACTION 形态 + ON CONFLICT 幂等），`EKB_DB_DRIVER=crdb`；LAN 集群（10.167.2.175/176）`ekb-app` 命名空间双副本部署（镜像 0.3.1-crdb）。
+- **真实测试与部署报告**：`docs/deploy-report-crdb-lan-2026-09-20.md`（T1-T12：功能链路/1275rps 压测/双副本原子认领/follower-read/事务泄漏根因与修复）。
+
+### Fixed
+
+- **CRDB 事务泄漏**（真实事故）：psycopg2 读路径隐式事务不 commit，CCL 无 license 版并发事务上限触顶致全集群 SQL 拒绝——读路径补 `_read_commit()`，40 请求连发后 `sql_txns_open=0` 验证。
+
+### Test
+
+- 本地 91/91 + 四门禁；真机 T1-T12 全过。综合 7.5 → **7.8**。
+
 ## [Unreleased] — 2026-09-07 七轮：W3C trace 传播
 
 ### Added

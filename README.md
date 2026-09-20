@@ -12,7 +12,7 @@
 | 事件契约 | **17 类** | Pulsar topic 契约化管理 |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **7.5 / 10**（9.5+ 需生产实证，路径见评审 §21） | 八特性国标矩阵见 §18.2 | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 架构评审 | **7.8 / 10** | CRDB 真机部署+压测实证（§22，报告 docs/deploy-report-crdb-lan-2026-09-20.md） | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
 | 前端多端 | admin M1.5 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 49.9KB）+ `web/mobile`（uni-app，鸿蒙路线） |
@@ -333,7 +333,8 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 
 | 环境变量 | 代码默认 | 生产建议默认 | 用途 |
 |---|---|---|---|
-| `EKB_DB_DRIVER` | `sqlite` | `tidb` | 控制面关系库驱动 |
+| `EKB_DB_DRIVER` | `sqlite` | `crdb` | 控制面关系库驱动（sqlite/tidb/crdb 三驱动） |
+| `EKB_CRDB_HOST/PORT/...` | 本机 | `cockroachdb.infra.svc.cluster.local:26257` | CRDB 连接族（follower-read 默认开） |
 | `EKB_DB_PATH` | `./data/control_plane.db` | `/var/lib/ekb/control_plane.db`（仅回退） | SQLite 回退路径 |
 | `EKB_TIDB_HOST` | `127.0.0.1` | `tidb-cluster-tidb` | TiDB 地址 |
 | `EKB_TIDB_PORT` | `4000` | `4000` | TiDB 端口 |
