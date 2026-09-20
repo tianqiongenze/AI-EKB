@@ -489,3 +489,24 @@ flowchart LR
 | 评分 | 测试与门禁 6.5→7.0（可执行人工测试体系 + 自测闭环）；部署与交付 7.8→8.0（管理台入集群，全栈 LAN 可测）；**综合 7.8 → 8.0** |
 
 运维补充：清理用旧部署残留 `kubectl -n ekb-app delete deploy,svc -l app=ekb-admin` 不需要（同名单次 apply）；回滚镜像标签 0.3.1-crdb 可用。
+
+## 24. 十轮落地：三梯队冲刺（2026-09-20，用户确认方案 docs/plan-score10-2026-09-20.md）
+
+| 梯队 | 项 | 结果 |
+|---|---|---|
+| 一 UI（B-1~B-8） | 管理台全面重构 | ✅ DataTable/Skeleton/EmptyState/Toast/Logo/MetricCard 9 组件 + 登录门（401 回流）+ 侧边响应式壳 + 审计真表格 + 容量指标卡 + WCAG 对比度修正；**30 组件测试**，gzip 53.25KB；管理台 0.2.0 已部署（30881） |
+| 二 架构 | A-3 Pulsar 真实后端 | ✅ 全链路实锤：flywheel 事件经 outbox→relay→Pulsar（tenant/ns 已建：group/{control,audit,observability,connectors,a2a,a2a-dlq}）→消费者读回；期间修复 compression_type int→枚举（dead 事件根因） |
+| | A-4 schemas 拆包 | ✅ schemas.py→schemas/ 包 8 模块显式再导出，零破坏（代理中断由主线接管完成） |
+| | C-1 集群 e2e | ✅ Playwright LAN profile（E2E_BASE_URL 直连 30881，免本地 server），登录感知冒烟 2/2 |
+| | C-3 告警 | ✅ PrometheusRule（dead-letter/backlog/命中率）已 apply |
+| | C-4 CI | e2e-lighthouse 随 push 触发（见 Actions） |
+| 三 深水区 | A-1 async 门面 | ✅ AsyncControlPlaneFacade + domain search/coverage 原生 async（to_thread 体）；**读吞吐 1275→1713 rps（+34%）**；门禁扩展 AsyncFunctionDef |
+| | C-2 写路径压测 | ✅ c=4：200/200 写成功（192 wps，p50 13ms）；**发现并修复写路径 rollback 缺陷**（失败留 aborted 事务占满 CCL cap 致全集群 500——_write_op 装饰器覆盖 11 写方法，0.4.2） |
+| | A-2 方言合并 | ⏸ 重新定界后缓办：CRDB 已成主数据面，SQLite 为回退、TiDB 为遗留第三驱动——合并 SQLite+TiDB 两份 SQL 的收益已低于风险，留待 TiDB 退役决策时一并处理（诚实记录，不做半吊子合并） |
+
+**E 组（用户决策：维持现状）**：CRDB license / 30 天 SLO / 第三方测评不立项——评分如实封顶并注明。
+
+### 24.1 评分（十轮）
+
+前端 7.0→**8.5**（产品级观感+登录+30 测试）；架构 8.2→**8.5**（async+事件全链路真机）；可靠性 7.5→**8.0**（写 rollback 修复+压测）；部署 8.0→**8.3**（告警+e2e+双端入集群）。
+**综合 8.0 → 8.6**（十轮：6.1→…→8.0→8.6）。按 §21 框架，剩余 0.9 分=E 组生产证据（license/SLO 运行期/第三方测评），代码侧冲刺完成。

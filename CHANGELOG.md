@@ -2,6 +2,28 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-20 三梯队冲刺（十轮，方案经用户确认）
+
+### Added
+
+- **UI 全面重构**（B-1~B-8）：9 个新组件（DataTable/Skeleton/EmptyState/Toast/Logo/MetricCard/Bars/styles/app.css）、登录门（sessionStorage token+401 回流）、侧边响应式壳（≥1024px）、审计真表格、容量指标卡、WCAG 对比度修正、favicon；30 组件测试，gzip 53.25KB；管理台 0.2.0 部署。
+- **Pulsar 真实后端**（A-3）：tenant/namespaces 建齐，事件 outbox→relay→Pulsar→消费全链路真机验证；compression_type 枚举修复。
+- **schemas/ 按上下文拆包**（A-4）：8 模块显式再导出零破坏。
+- **async 门面**（A-1）：AsyncControlPlaneFacade + domain 热路径原生 async；读吞吐 +34%（1275→1713 rps）。
+- **集群 e2e**（C-1，LAN profile 登录感知 2/2）、**PrometheusRule 告警**（C-3）。
+
+### Fixed
+
+- **CRDB 写路径 rollback 缺陷**（C-2 压测发现）：失败语句留 aborted 事务占满 CCL open-txn cap 致全集群 500——_write_op 装饰器（11 写方法）回滚，0.4.2 验证（200/200 写成功、事务归零）。
+
+### Deferred
+
+- A-2 方言合并：CRDB 已成主数据面，SQLite/TiDB 为回退/遗留——收益低于风险，随 TiDB 退役决策处理。
+
+### Test
+
+- 本地 92/92 + 四门禁；真机写/读压测 + e2e 全过。综合 8.0 → **8.6**（E 组生产证据维持现状，如实封顶）。
+
 ## [Unreleased] — 2026-09-20 管理台入集群 + 人工测试指南（九轮）
 
 ### Added
