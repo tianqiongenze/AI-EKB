@@ -531,11 +531,13 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             f"SELECT * FROM audits ORDER BY id DESC LIMIT %s",
             (limit,),
         )]
-        rows = self._read_only_txn(statements)
-        for row in rows:
-            row = {k: _row_jsonable(v) for k, v in row.items()}
-            row["payload_json"] = _ensure_json(row.get("payload_json"))
-            row["accepted"] = bool(row.get("accepted"))
+        raw = self._read_only_txn(statements)
+        rows: list[dict[str, Any]] = []
+        for row in raw:
+            item = {k: _row_jsonable(v) for k, v in row.items()}
+            item["payload_json"] = _ensure_json(item.get("payload_json"))
+            item["accepted"] = bool(item.get("accepted"))
+            rows.append(item)
         return rows
 
     # ------------------------------------------------------------------
