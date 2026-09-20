@@ -194,13 +194,14 @@ class HighPerformancePulsarClient:
             )
 
     def _get_or_create_producer(self, topic: str):
+        pulsar_module = importlib.import_module("pulsar")
         if topic not in self._producers:
             self._producers[topic] = self._client.create_producer(
                 topic,
                 batching_enabled=True,
                 batching_max_messages=1000,
                 batching_max_publish_delay_ms=20,
-                compression_type=2,
+                compression_type=pulsar_module.CompressionType.LZ4,
                 send_timeout_millis=2000,
                 block_if_queue_full=True,
             )

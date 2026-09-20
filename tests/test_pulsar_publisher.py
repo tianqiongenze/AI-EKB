@@ -33,6 +33,9 @@ class _FakeClient:
 
 
 class _FakePulsarModule:
+    class CompressionType:
+        LZ4 = 2
+        NONE = 0
     def __init__(self) -> None:
         self.client = _FakeClient()
 
