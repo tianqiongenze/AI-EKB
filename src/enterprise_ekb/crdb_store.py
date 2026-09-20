@@ -87,6 +87,25 @@ def _ensure_json(value: Any) -> Any:
     return json.loads(value)
 
 
+
+
+def _write_op(fn):
+    """Commit-or-rollback wrapper for CRDB write methods.
+
+    Without the rollback, a failed statement leaves an aborted transaction
+    open on the thread-local connection — under the CCL free-tier open-txn
+    cap this wedges the whole cluster (found by the C-2 write load test)."""
+
+    def wrapper(self, *args, **kwargs):
+        try:
+            return fn(self, *args, **kwargs)
+        except Exception:
+            self._rollback()
+            raise
+
+    return wrapper
+
+
 class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     """Primary datastore on CRDB (PG wire). Inherits row<->model mapping logic
     shape from the SQLite store but re-implements all SQL for PG dialect."""
@@ -410,6 +429,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             )
         return result
 
+    @_write_op
     def create_skill(self, manifest: SkillManifest, stage: SkillStage) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -435,6 +455,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             )
         self._commit()
 
+    @_write_op
     def update_skill_stage(self, skill_name: str, version: str, stage: SkillStage) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -497,6 +518,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # outbox
     # ------------------------------------------------------------------
 
+    @_write_op
     def enqueue_outbox(self, event_type: str, payload: dict[str, Any]) -> int:
         with self._cursor() as cur:
             cur.execute(
@@ -507,6 +529,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._commit()
         return event_id
 
+    @_write_op
     def claim_pending_outbox(self, limit: int, claim_timeout_seconds: int = 30) -> list[dict[str, Any]]:
         def _operation() -> list[dict[str, Any]]:
             self._conn._current().autocommit = False
@@ -549,6 +572,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
 
         return _operation()
 
+    @_write_op
     def mark_outbox_published(self, event_id: int) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -557,6 +581,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             )
         self._commit()
 
+    @_write_op
     def mark_outbox_failed(self, event_id: int, error: str) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -711,6 +736,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # business capabilities
     # ------------------------------------------------------------------
 
+    @_write_op
     def upsert_business_capability(self, capability: BusinessCapabilityManifest) -> int:
         with self._cursor() as cur:
             cur.execute(
@@ -784,6 +810,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # connectors
     # ------------------------------------------------------------------
 
+    @_write_op
     def persist_connector_envelope(self, envelope: ConnectorEnvelope) -> tuple[int, bool]:
         with self._cursor() as cur:
             cur.execute(
@@ -811,6 +838,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._commit()
         return int(row["id"]), bool(row["inserted"])
 
+    @_write_op
     def update_connector_status(self, row_id: int, status: ConnectorRunStatus) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -854,6 +882,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # profiles / checkpoints / pull runs
     # ------------------------------------------------------------------
 
+    @_write_op
     def upsert_connector_profile(self, profile: ConnectorProfile) -> None:
         with self._cursor() as cur:
             cur.execute(
@@ -987,6 +1016,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             out.append(row)
         return out
 
+    @_write_op
     def append_harness_run(self, payload: dict[str, Any]) -> None:
         with self._cursor() as cur:
             cur.execute(
