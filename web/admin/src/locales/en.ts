@@ -61,6 +61,7 @@ export const en: Record<TranslationKey, string> = {
   "capacity.bar.failoverPeak": "Failover peak QPS",
   "capacity.empty.title": "No estimation yet",
   "capacity.empty.desc": "Click the button above to estimate with the default baseline (100k online)",
+  "capacity.empty.action": "Start estimation",
   // B-5 toasts
   "toast.capacityDone": "Capacity estimation done",
   "toast.auditLoaded": "Loaded {count} audit records",

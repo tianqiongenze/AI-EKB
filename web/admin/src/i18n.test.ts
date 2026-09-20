@@ -27,6 +27,7 @@ vi.hoisted(() => {
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.setItem("ekb.admin.token", "test-token");
   setLocale("zh-CN");
 });
 

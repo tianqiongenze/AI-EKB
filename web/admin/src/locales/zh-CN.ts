@@ -59,6 +59,7 @@ export const zhCN = {
   "capacity.bar.failoverPeak": "容灾峰值 QPS",
   "capacity.empty.title": "尚未估算",
   "capacity.empty.desc": "点击上方按钮，按默认基线（10 万在线）开始估算",
+  "capacity.empty.action": "开始估算",
   // B-5 Toast
   "toast.capacityDone": "容量估算完成",
   "toast.auditLoaded": "已加载 {count} 条审计记录",

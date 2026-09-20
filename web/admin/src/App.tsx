@@ -283,7 +283,7 @@ export default function App() {
               <EmptyState
                 title={t("capacity.empty.title")}
                 description={t("capacity.empty.desc")}
-                actionLabel={t("button.capacityEstimate")}
+                actionLabel={t("capacity.empty.action")}
                 onAction={runCapacity}
               />
             )}
