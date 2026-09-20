@@ -43,7 +43,8 @@ class PolicyEngine:
         except KeyError:
             return PolicyDecision(allowed=False, reason="skill_not_found")
 
-        if skill.stage.value != "production":
+        stage_val = skill.stage.value if hasattr(skill.stage, "value") else str(skill.stage)
+        if stage_val != "production":
             return PolicyDecision(allowed=False, reason="skill_not_in_production")
 
         manifest = skill.manifest
