@@ -29,6 +29,17 @@ paths:
       responses:
         '200':
           description: fused retrieval result
+  /mcp/stream:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayInvokeRequest'
+      responses:
+        '200':
+          description: SSE stream events start first_token token done
   /mcp/invoke:
     post:
       requestBody:

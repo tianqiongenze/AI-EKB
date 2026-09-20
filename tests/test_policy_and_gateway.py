@@ -65,4 +65,4 @@ def test_gateway_allows_production_skill_and_allowed_tool() -> None:
     result = gateway.invoke(req)
     assert result.accepted
     assert result.decision_reason == "ok"
-    assert result.data["status"] == "executed"
+    assert "answer" in result.data  # P0-①: stub replaced with real LLM response

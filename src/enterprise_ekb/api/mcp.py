@@ -118,4 +118,17 @@ def routes(ctx: ControlPlaneContext) -> list:
             "reason": response.decision_reason,
             "data": response.data,
         }
-    return [mcp_invoke]
+
+
+    @post("/mcp/stream", status_code=200)
+    async def mcp_stream(data: GatewayInvokeRequest, request: Request) -> Response:
+        """SSE streaming LLM invocation (first-token + incremental tokens)."""
+        if ctx.config.auth_token and not ctx._bearer_matches(request):
+            raise HTTPException(status_code=401, detail="unauthorized")
+        async def stream():
+            async for chunk in ctx.mcp_gateway.invoke_stream(data):
+                yield chunk
+        return Response(content=stream(), media_type="text/event-stream",
+                         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+    return [mcp_invoke, mcp_stream]

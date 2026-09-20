@@ -1,19 +1,70 @@
-"""Hybrid retrieval with Reciprocal Rank Fusion (review P1 混合检索层).
+"""Hybrid retrieval with Reciprocal Rank Fusion (P0-③: three legs complete).
 
-Legs available today:
-- lexical: domain-capability catalog search (SQL LIKE, the sparse leg)
+Legs:
+- lexical: BM25 in-memory scorer (no ES dependency; pluggable to ES for scale)
 - vector: Milvus similarity search (dense leg, external client)
-- graph: pluggable hook (Neo4j client currently write-only; degrades to skip)
+- graph: pluggable reader (Neo4j multi-hop query or any callable returning IDs)
 
-Fusion is Reciprocal Rank Fusion (score = sum 1/(k + rank)), the standard
-robust default for merging heterogeneous ranked lists without score
-calibration. Legs that are unavailable degrade the response instead of
-failing it (`degraded=True`, per-leg counts reported).
+Fusion: Reciprocal Rank Fusion (weighted, k=60 default). Reranker hook
+(cross-encoder) applies after RRF for final precision boost.
 """
 
 from __future__ import annotations
 
 from typing import Any
+
+
+
+
+class BM25Scorer:
+    """In-memory BM25 (Okapi) term-frequency scorer.
+
+    No ES dependency — pluggable to ES/OpenSearch at production scale. Good
+    enough for CI tests and small catalogs; the scoring formula is the
+    standard BM25 (k1=1.5, b=0.75) so results are directly comparable.
+    """
+
+    def __init__(self, documents: list[dict[str, str]], k1: float = 1.5, b: float = 0.75) -> None:
+        self._k1 = k1
+        self._b = b
+        self._docs: list[tuple[str, list[str]]] = []
+        self._df: dict[str, int] = {}
+        self._avgdl = 0.0
+        for doc in documents:
+            tokens = doc["text"].lower().split()
+            self._docs.append((doc["id"], tokens))
+            self._avgdl += len(tokens)
+            for term in set(tokens):
+                self._df[term] = self._df.get(term, 0) + 1
+        self._avgdl = self._avgdl / max(len(self._docs), 1)
+        self._n = len(self._docs)
+
+    def search(self, query: str, top_k: int = 10) -> list[tuple[str, float]]:
+        if not query.strip():
+            return []
+        terms = query.lower().split()
+        import math
+        scores: list[tuple[str, float]] = []
+        for doc_id, tokens in self._docs:
+            score = 0.0
+            tf_map: dict[str, int] = {}
+            for t in tokens:
+                tf_map[t] = tf_map.get(t, 0) + 1
+            dl = len(tokens)
+            for term in terms:
+                tf = tf_map.get(term, 0)
+                if tf == 0:
+                    continue
+                df = self._df.get(term, 0)
+                idf = math.log(1 + (self._n - df + 0.5) / (df + 0.5))
+                numerator = tf * (self._k1 + 1)
+                denominator = tf + self._k1 * (1 - self._b + self._b * dl / max(self._avgdl, 1))
+                score += idf * numerator / denominator
+            if score > 0:
+                scores.append((doc_id, score))
+        scores.sort(key=lambda x: (-x[1], x[0]))
+        return scores[:top_k]
+
 
 from enterprise_ekb.schemas import HybridRetrievalItem, HybridRetrievalResult
 
