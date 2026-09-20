@@ -106,6 +106,29 @@ def _write_op(fn):
     return wrapper
 
 
+
+
+def _row_jsonable(value: Any) -> Any:
+    """Normalize CRDB rows (dict/list/scalar) for JSON caching/serialization.
+
+    psycopg2 returns datetime/Decimal objects; the cache layer json.dumps and
+    HTTP encoders need primitives (audit-query 500 regression, 2026-09-20)."""
+    from datetime import date as _date, datetime as _dt
+    from decimal import Decimal as _Decimal
+
+    if isinstance(value, dict):
+        return {k: _row_jsonable(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_row_jsonable(v) for v in value]
+    if isinstance(value, _dt):
+        return value.isoformat()
+    if isinstance(value, _date):
+        return value.isoformat()
+    if isinstance(value, _Decimal):
+        return float(value)
+    return value
+
+
 class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     """Primary datastore on CRDB (PG wire). Inherits row<->model mapping logic
     shape from the SQLite store but re-implements all SQL for PG dialect."""
@@ -510,6 +533,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         )]
         rows = self._read_only_txn(statements)
         for row in rows:
+            row = {k: _row_jsonable(v) for k, v in row.items()}
             row["payload_json"] = _ensure_json(row.get("payload_json"))
             row["accepted"] = bool(row.get("accepted"))
         return rows
@@ -617,6 +641,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         )]
         rows = self._read_only_txn(statements)
         for row in rows:
+            row = {k: _row_jsonable(v) for k, v in row.items()}
             row["payload_json"] = _ensure_json(row.get("payload_json"))
         return rows
 
@@ -874,7 +899,8 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         for row in rows:
             row = dict(row)
             for key in ("payload_json", "metadata_json"):
-                    row[key] = _ensure_json(row.get(key))
+                row[key] = _ensure_json(row.get(key))
+            row = {k: _row_jsonable(v) for k, v in row.items()}
             out.append(row)
         return out
 

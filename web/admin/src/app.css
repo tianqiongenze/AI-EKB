@@ -300,3 +300,109 @@ textarea {
   margin: 0;
   font-size: 13px;
 }
+
+/* =====================================================================
+   视觉强化层 v2（高级美工 pass，2026-09-20）——纯级联覆盖，不改结构。
+   原则（对标 2026 仪表盘最佳实践）：明确层级 / 低视觉噪音 / 克制的
+   微交互 / 品牌渐变锚点。所有色仍走令牌或由令牌线性衍生。
+   ===================================================================== */
+
+/* 全局质感基线 */
+.app-shell {
+  font-feature-settings: "tnum" 1;             /* 表格数字等宽 */
+  letter-spacing: 0.01em;
+}
+
+/* 侧边导航：品牌渐变 + 分层光感 */
+@media (min-width: 1024px) {
+  .app-side {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--color-brand-primary) 14%, var(--color-surface-card)),
+      var(--color-surface-card) 42%);
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    box-shadow: 1px 0 24px color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
+  }
+  .app-side nav button {
+    transition: transform .16s ease, background .16s ease;
+  }
+  .app-side nav button:hover { transform: translateX(2px); }
+}
+
+/* 卡片体系：悬浮层级 + 呼吸感 + 悬停微升 */
+section, .card, .metric-card, .login-card {
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-surface-text) 6%, transparent),
+    0 8px 24px -12px color-mix(in srgb, var(--color-surface-text) 12%, transparent);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+section:hover, .metric-card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--color-surface-text) 7%, transparent),
+    0 14px 32px -14px color-mix(in srgb, var(--color-brand-primary) 22%, transparent);
+}
+
+/* 标题层级：主标题加重 + 品牌色关键强调 */
+h1 { font-weight: 700; letter-spacing: -0.01em; }
+h2 { text-transform: uppercase; font-size: 12px; letter-spacing: .08em;
+     color: var(--color-surface-muted); }
+
+/* 状态点：柔和光晕 */
+[data-testid="status-dot"] span[aria-hidden] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* 数据表格：表头条纹 + 行过渡 + 圆角裁切 */
+.dt-table { border-collapse: separate; border-spacing: 0; overflow: hidden;
+  border-radius: var(--radius-input); }
+.dt-table th {
+  background: color-mix(in srgb, var(--color-brand-primary) 8%, var(--color-surface-card));
+  font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+}
+.dt-table tbody tr { transition: background .15s ease; }
+
+/* 按钮体系：主按钮渐变 + 按压反馈 */
+button {
+  transition: filter .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+button:hover { filter: brightness(1.06); }
+button:active { transform: translateY(1px) scale(.99); }
+button[style*="--color-brand-primary"], .btn-primary {
+  background-image: linear-gradient(135deg,
+    var(--color-brand-primary),
+    color-mix(in srgb, var(--color-brand-primary) 72%, #7c3aed));
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--color-brand-primary) 55%, transparent);
+  color: #fff;
+}
+
+/* 骨架屏：更柔的呼吸 */
+@keyframes ekb-shimmer { 0% { opacity:.45 } 50% { opacity:.85 } 100% { opacity:.45 } }
+.skeleton, [class*="Skeleton"] [class*="bar"], [class*="skel"] {
+  animation: ekb-shimmer 1.4s ease-in-out infinite;
+  background: color-mix(in srgb, var(--color-surface-muted) 18%, transparent);
+}
+
+/* 细滚动条（Webkit） */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-surface-muted) 35%, transparent);
+  border-radius: 8px; border: 2px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--color-surface-muted) 55%, transparent); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 登录卡：居中舞台 + 顶部品牌光带 */
+.login-card {
+  position: relative; overflow: hidden;
+}
+.login-card::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+  background: linear-gradient(90deg, var(--color-brand-primary),
+    color-mix(in srgb, var(--color-brand-primary) 60%, #7c3aed));
+}
+
+/* 暗色主题微调：卡片边线提亮一档 */
+[data-theme="dark"] section, [data-theme="dark"] .metric-card {
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, #ffffff14);
+}
