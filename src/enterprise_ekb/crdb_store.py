@@ -133,6 +133,11 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     def _cursor(self) -> Any:
         return self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    def _read_commit(self) -> None:
+        """Close the implicit txn a plain read opened (psycopg2 keeps txns open
+        after SELECT; CRDB free-tier counts every open txn against the cap)."""
+        self._commit()
+
     def _commit(self) -> None:
         self._conn.commit()
 
@@ -383,6 +388,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         with self._cursor() as cur:
             cur.execute(sql)
             rows = cur.fetchall()
+        self._read_commit()
         result: list[SkillRow] = []
         for row in rows:
             result.append(
@@ -570,6 +576,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         with self._cursor() as cur:
             cur.execute("SELECT status, COUNT(*) AS count FROM outbox_events GROUP BY status")
             rows = cur.fetchall()
+        self._read_commit()
         stats: dict[str, int] = {"pending": 0, "processing": 0, "published": 0, "dead": 0}
         for row in rows:
             stats[str(row["status"])] = int(row["count"])
@@ -599,6 +606,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 (task_id,),
             )
             row = cur.fetchone()
+        self._read_commit()
         return self._sub_agent_row_to_record(row) if row else None
 
     def get_sub_agent_task_by_idempotency(self, tenant_id: str, idempotency_key: str) -> SubAgentTaskRecord | None:
@@ -608,6 +616,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 (tenant_id, idempotency_key),
             )
             row = cur.fetchone()
+        self._read_commit()
         return self._sub_agent_row_to_record(row) if row else None
 
     def create_sub_agent_task(
@@ -640,6 +649,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 (supervisor_id, limit),
             )
             rows = cur.fetchall()
+        self._read_commit()
         return [r for r in (self._sub_agent_row_to_record(row) for row in rows) if r is not None]
 
     def update_sub_agent_task_status(
@@ -753,6 +763,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         with self._cursor() as cur:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
+        self._read_commit()
         result: list[BusinessCapabilityManifest] = []
         for row in rows:
             result.append(
@@ -830,6 +841,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         with self._cursor() as cur:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
+        self._read_commit()
         out: list[dict[str, Any]] = []
         for row in rows:
             row = dict(row)
@@ -879,6 +891,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         with self._cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
+        self._read_commit()
         profiles: list[ConnectorProfile] = []
         for row in rows:
             profiles.append(
@@ -904,6 +917,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 (connector_system.value, profile_name),
             )
             row = cur.fetchone()
+        self._read_commit()
         return dict(row) if row else None
 
     def update_connector_checkpoint(
@@ -965,6 +979,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 (connector_system.value, profile_name, limit),
             )
             rows = cur.fetchall()
+        self._read_commit()
         out: list[dict[str, Any]] = []
         for row in rows:
             row = dict(row)
