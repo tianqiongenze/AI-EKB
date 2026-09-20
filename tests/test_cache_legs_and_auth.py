@@ -46,3 +46,26 @@ def test_weighted_rrf_lets_stronger_leg_dominate() -> None:
     weighted = dict(reciprocal_rank_fusion([["a"], ["c", "b"]], k=60, weights=[0.5, 3.0]))
     assert uniform["a"] > uniform["b"], "uniform weights keep a on top"
     assert weighted["b"] > weighted["a"], "2x weight on leg2 must promote b past a"
+
+
+def test_async_facade_and_hot_handlers_are_native_async() -> None:
+    import inspect
+
+    from enterprise_ekb.api.context import build_context
+    from enterprise_ekb.api import domain as domain_module
+    from enterprise_ekb.async_facade import AsyncControlPlaneFacade
+
+    ctx = build_context(__import__("enterprise_ekb.config", fromlist=["load_config"]).load_config(), ":memory:")
+    handlers = domain_module.routes(ctx)
+    by_name = {getattr(h, "fn", h).__name__: getattr(h, "fn", h) for h in handlers}
+    assert asyncio.iscoroutinefunction(by_name["search_domain_capabilities"])
+    assert asyncio.iscoroutinefunction(by_name["domain_capabilities_coverage"])
+
+    async def _probe() -> dict:
+        facade = AsyncControlPlaneFacade(ctx.store)
+        return await facade.outbox_stats()
+
+    assert asyncio.run(_probe())["pending"] >= 0
+
+
+import asyncio  # noqa: E402

@@ -1,0 +1,302 @@
+/* B-1~B-7 UI 重构：应用壳层与共享组件样式。
+   设计令牌全部来自 tokens.css（单一视觉源），本文件只做组合，不引入新颜色字面量
+   （Toast 两色除外——白字对比度固定的自包含反馈色，两主题通用）。 */
+
+/* ---- B-6 全局可访问性基线 ---- */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+button,
+input,
+select,
+textarea {
+  min-height: 32px;
+}
+
+/* ---- B-7 响应式壳层：<1024px 顶栏页签；≥1024px 左侧固定 200px 侧边导航 ---- */
+.app-shell {
+  min-height: 100vh;
+  background: var(--color-surface-bg);
+  color: var(--color-surface-text);
+  font-family: var(--typography-family);
+}
+.app-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.app-controls {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+.app-status {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.app-main {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .app-side {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    box-sizing: border-box;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: none;
+    border-right: 1px solid var(--color-border);
+  }
+  .app-brand { order: 0; }
+  .app-status { order: 1; min-height: 0; }
+  .app-nav {
+    order: 2;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+  }
+  .app-nav > button {
+    width: 100%;
+    text-align: left;
+  }
+  .app-controls {
+    order: 3;
+    margin-left: 0;
+    margin-top: auto;
+  }
+}
+
+/* ---- B-1 DataTable：斑马纹 + 行悬停 + 单元格溢出省略（title 提示） ---- */
+.dt-wrap {
+  overflow-x: auto;
+}
+.dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--typography-size-body);
+}
+.dt-table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-surface-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.dt-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.dt-table tbody tr:nth-child(even) {
+  background: var(--color-surface-zebra);
+}
+.dt-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+.dt-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dt-ok {
+  color: var(--color-surface-ok);
+  font-weight: 700;
+}
+.dt-bad {
+  color: var(--color-brand-danger);
+  font-weight: 700;
+}
+
+/* ---- B-2 Skeleton：3 行灰条 shimmer ---- */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.skeleton-bar {
+  height: 14px;
+  border-radius: var(--radius-input);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-zebra) 25%,
+    var(--color-surface-hover) 50%,
+    var(--color-surface-zebra) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+  }
+}
+
+/* ---- B-2 EmptyState：内联 SVG 插画 + 主文案 + 副文案 + 可选 CTA ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+.empty-title {
+  margin: 0;
+  font-weight: 600;
+}
+.empty-desc {
+  margin: 0;
+  color: var(--color-surface-muted);
+}
+
+/* ---- B-4 容量估算：指标卡 + 对比条形图容器 ---- */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+.metric-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.metric-unit {
+  font-size: var(--typography-size-body);
+  font-weight: 500;
+  margin-left: var(--space-1);
+  color: var(--color-surface-muted);
+}
+.metric-label {
+  color: var(--color-surface-muted);
+}
+.chart-title {
+  font-size: var(--typography-size-body);
+  font-weight: 600;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+/* ---- B-5 Toast：右上角轻通知，3s 自动消失 ---- */
+.toast-stack {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: min(360px, 80vw);
+}
+.toast {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-input);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--typography-size-body);
+}
+/* 自包含反馈色：白字对比 success 5.1:1 / error 6.5:1，两主题通用。 */
+.toast-success {
+  background: #0b7d57;
+}
+.toast-error {
+  background: #b91c1c;
+}
+
+/* ---- B-3 登录页 ---- */
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-bg);
+  color: var(--color-surface-text);
+  font-family: var(--typography-family);
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+.login-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  width: min(360px, 100%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+.login-card h1 {
+  font-size: var(--typography-size-h1);
+  margin: 0;
+}
+.login-sub {
+  color: var(--color-surface-muted);
+  margin: 0;
+  text-align: center;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--color-surface-muted);
+  font-size: 13px;
+}
+.login-error {
+  color: var(--color-brand-danger);
+  margin: 0;
+  font-size: 13px;
+}

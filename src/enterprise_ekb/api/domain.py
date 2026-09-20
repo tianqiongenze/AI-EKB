@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import time
 import uuid
@@ -9,6 +10,7 @@ from litestar import Request, Response, get, post
 from litestar.exceptions import HTTPException
 
 from enterprise_ekb.api.context import ControlPlaneContext
+from enterprise_ekb.async_facade import AsyncControlPlaneFacade
 from enterprise_ekb.domain_capability import default_domain_bootstrap
 from enterprise_ekb.schemas import (
     A2APriority,
@@ -61,6 +63,7 @@ from enterprise_ekb.schemas import (
 
 
 def routes(ctx: ControlPlaneContext) -> list:
+    astore = AsyncControlPlaneFacade(ctx.store)
     @post("/domain/capabilities/upsert", status_code=200, sync_to_thread=True)
     def upsert_domain_capability(data: BusinessCapabilityManifest) -> dict[str, object]:
         capability_id = ctx.domain_capability_service.upsert(data)
@@ -76,16 +79,17 @@ def routes(ctx: ControlPlaneContext) -> list:
             },
         )
         return {"id": capability_id, "status": "ok"}
-    @post("/domain/capabilities/search", status_code=200, sync_to_thread=True)
-    def search_domain_capabilities(data: DomainCapabilitySearchRequest) -> DomainCapabilitySearchResult:
-        return ctx.domain_capability_service.search(
+    @post("/domain/capabilities/search", status_code=200)
+    async def search_domain_capabilities(data: DomainCapabilitySearchRequest) -> DomainCapabilitySearchResult:
+        return await asyncio.to_thread(
+            ctx.domain_capability_service.search,
             domain=data.domain,
             query=data.query,
             limit=data.limit,
         )
-    @get("/domain/capabilities/coverage", sync_to_thread=True)
-    def domain_capabilities_coverage() -> DomainCoverageResponse:
-        return ctx.domain_capability_service.coverage()
+    @get("/domain/capabilities/coverage")
+    async def domain_capabilities_coverage() -> DomainCoverageResponse:
+        return await asyncio.to_thread(ctx.domain_capability_service.coverage)
     @post("/domain/capabilities/bootstrap", status_code=200, sync_to_thread=True)
     def bootstrap_domain_capabilities(data: DomainBootstrapRequest) -> dict[str, object]:
         items = default_domain_bootstrap(owner=data.owner)

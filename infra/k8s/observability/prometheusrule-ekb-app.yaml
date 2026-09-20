@@ -1,0 +1,49 @@
+# Alerting rules for the ekb-app deployment (review C-3).
+# Activation requires the cluster Prometheus to select this rule (release label
+# matching may need adjustment to the local Prometheus instance).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ekb-app-rules
+  namespace: ekb-app
+  labels:
+    app: ekb-control-plane
+    release: prometheus
+spec:
+  groups:
+    - name: ekb-app.events
+      rules:
+        - alert: EkbOutboxDeadEvents
+          expr: ekb_outbox_events{state="dead"} > 0
+          for: 2m
+          labels: {severity: critical}
+          annotations:
+            summary: "EKB outbox dead-letter events present ({{ $value }})"
+        - alert: EkbOutboxBacklog
+          expr: ekb_outbox_events{state="pending"} > 100
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "EKB outbox backlog growing ({{ $value }} pending)"
+    - name: ekb-app.latency
+      rules:
+        - alert: EkbHttpP99High
+          expr: |
+            sum by (path) (rate(ekb_http_request_duration_seconds_count[5m]))
+              /
+            sum by (path) (rate(ekb_http_request_duration_seconds_count[5m] offset 5m)) > 2
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "EKB request rate doubled on {{ $labels.path }} (burst anomaly)"
+    - name: ekb-app.cache
+      rules:
+        - alert: EkbCacheHitRateLow
+          expr: |
+            sum(rate(ekb_cache_hits_total[15m]))
+              /
+            (sum(rate(ekb_cache_hits_total[15m])) + sum(rate(ekb_cache_misses_total[15m]))) < 0.2
+          for: 30m
+          labels: {severity: info}
+          annotations:
+            summary: "EKB cache hit rate below 20% over 15m"

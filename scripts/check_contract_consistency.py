@@ -51,7 +51,7 @@ def _extract_routes_from_file(path: Path) -> set[RouteContract]:
     routes: set[RouteContract] = set()
 
     for node in ast.walk(tree):
-        if not isinstance(node, ast.FunctionDef):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         for decorator in node.decorator_list:
             if not isinstance(decorator, ast.Call):

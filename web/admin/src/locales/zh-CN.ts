@@ -22,6 +22,47 @@ export const zhCN = {
   "button.skillsPromote": "一键注册并晋级",
   "button.auditQuery": "查询",
   "message.skillsPromoted": "{skill} 已晋级 production ✅",
+  // B-2 空态
+  "empty.default": "暂无数据",
+  "empty.outbox.title": "Outbox 暂无事件",
+  "empty.metrics.title": "暂无 /metrics 数据",
+  "empty.relay.title": "暂无 relay 计数序列",
+  // B-3 登录页
+  "login.title": "登录雅迪 EKB 管理台",
+  "login.subtitle": "请输入管理 Token 进入控制台",
+  "login.tokenLabel": "管理 Token",
+  "login.tokenPlaceholder": "Bearer Token",
+  "login.submit": "进入控制台",
+  "login.tokenRequired": "请输入 Token",
+  "a11y.logoLabel": "雅迪 EKB 标识",
+  // B-1 审计表格
+  "audit.col.time": "时间",
+  "audit.col.tenant": "租户",
+  "audit.col.skill": "Skill",
+  "audit.col.tool": "工具",
+  "audit.col.decision": "决策",
+  "audit.col.accepted": "结果",
+  "audit.empty.title": "暂无审计记录",
+  "audit.empty.desc": "触发一次网关调用后可再次查询",
+  "audit.empty.action": "重新加载",
+  // B-4 容量估算
+  "capacity.metric.estimatedQps": "估算总 QPS",
+  "capacity.metric.heavyLlmQps": "重模型 QPS",
+  "capacity.metric.a100": "推荐 A100 80G",
+  "capacity.metric.failoverPeak": "容灾峰值 QPS",
+  "capacity.metric.gpuUnit": "卡",
+  "capacity.chart.title": "QPS 构成对比",
+  "capacity.bar.total": "总 QPS",
+  "capacity.bar.llm": "LLM QPS",
+  "capacity.bar.heavy": "重模型 QPS",
+  "capacity.bar.crossRegion": "跨区域 QPS",
+  "capacity.bar.failoverPeak": "容灾峰值 QPS",
+  "capacity.empty.title": "尚未估算",
+  "capacity.empty.desc": "点击上方按钮，按默认基线（10 万在线）开始估算",
+  // B-5 Toast
+  "toast.capacityDone": "容量估算完成",
+  "toast.auditLoaded": "已加载 {count} 条审计记录",
+  "skills.hint": "注册 ui-skill-* 并依次晋级 review → staging → production，操作结果以右上角通知反馈",
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

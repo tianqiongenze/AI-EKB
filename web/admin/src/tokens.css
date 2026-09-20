@@ -5,9 +5,12 @@
   --color-surface-bg: #f7f8fa;
   --color-surface-card: #ffffff;
   --color-surface-text: #111827;
-  --color-surface-muted: #6b7280;
+  /* B-6 对比度：#6b7280 对 bg 仅 4.55:1（贴线），加深到 #5f6774 ≈5.6:1（bg）/6.0:1（card）。 */
+  --color-surface-muted: #5f6774;
   --color-surface-ok: #0e9f6e;
   --color-surface-warn: #c27803;
+  --color-surface-zebra: #f3f4f8;
+  --color-surface-hover: #e9effb;
   --color-border: #e5e7eb;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
   --radius-card: 10px; --radius-input: 6px;
@@ -15,7 +18,7 @@
   --typography-size-body: 14px; --typography-size-h1: 22px;
 }
 
-/* Dark theme override — same token contract, flipped values (M1.5). */
+/* Dark theme override — same token contract, flipped values (M1.5). muted #9aa1ab 对 bg 7.25:1 达标。 */
 [data-theme="dark"] {
   --color-brand-primary: #6ea8ff;
   --color-brand-danger: #ff7b7b;
@@ -25,5 +28,7 @@
   --color-surface-muted: #9aa1ab;
   --color-surface-ok: #35c28f;
   --color-surface-warn: #e0a437;
+  --color-surface-zebra: #1c2029;
+  --color-surface-hover: #232a3a;
   --color-border: #2a2f3a;
 }
