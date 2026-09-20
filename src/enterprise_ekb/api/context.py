@@ -243,7 +243,18 @@ def build_context(config: AppConfig, db_path: str | None = None) -> ControlPlane
     resolved_db_path = db_path or config.db_path
     external_clients_enabled = os.getenv("EKB_ENABLE_EXTERNAL_CLIENTS", "false").lower() == "true"
 
-    if config.db_driver.lower() == "tidb":
+    if config.db_driver.lower() == "crdb":
+        from enterprise_ekb.crdb_store import CockroachDBControlPlaneStore
+
+        store = CockroachDBControlPlaneStore(
+            host=config.crdb_host,
+            port=config.crdb_port,
+            user=config.crdb_user,
+            password=config.crdb_password,
+            database=config.crdb_database,
+            follower_reads=config.crdb_follower_reads,
+        )
+    elif config.db_driver.lower() == "tidb":
         store = TiDBControlPlaneStore(
             host=config.tidb_host,
             port=config.tidb_port,

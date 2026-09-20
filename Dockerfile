@@ -5,7 +5,7 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e . && python -c "import litestar, granian, psycopg2; print('deps ok')"
 
 EXPOSE 8080
 

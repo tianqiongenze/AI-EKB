@@ -62,6 +62,12 @@ class AppConfig:
     relay_interval_seconds: float
     read_replica_db_path: str
     tidb_read_host: str
+    crdb_host: str
+    crdb_port: int
+    crdb_user: str
+    crdb_password: str
+    crdb_database: str
+    crdb_follower_reads: bool
 
 
 def _parse_tenant_region_rate_limits(raw: str) -> dict[str, int]:
@@ -164,4 +170,10 @@ def load_config() -> AppConfig:
         relay_interval_seconds=float(os.getenv("EKB_RELAY_INTERVAL_SECONDS", "5")),
         read_replica_db_path=os.getenv("EKB_READ_REPLICA_DB_PATH", ""),
         tidb_read_host=os.getenv("EKB_TIDB_READ_HOST", ""),
+        crdb_host=os.getenv("EKB_CRDB_HOST", "127.0.0.1"),
+        crdb_port=int(os.getenv("EKB_CRDB_PORT", "26257")),
+        crdb_user=os.getenv("EKB_CRDB_USER", "root"),
+        crdb_password=os.getenv("EKB_CRDB_PASSWORD", ""),
+        crdb_database=os.getenv("EKB_CRDB_DATABASE", "ekb_control_plane"),
+        crdb_follower_reads=os.getenv("EKB_CRDB_FOLLOWER_READS", "true").lower() == "true",
     )
