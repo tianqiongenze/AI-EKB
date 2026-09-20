@@ -82,7 +82,11 @@ def routes(ctx: ControlPlaneContext) -> list:
             "outbox_claim_instance": ctx.store.outbox_claim_instance_id(),
             "outbox": ctx.store.outbox_stats(),
         }
-        etag = hashlib.sha256(repr(body).encode("utf-8")).hexdigest()[:16]
+        # ETag must be replica-stable: outbox_claim_instance differs per pod and
+        # would make If-None-Match flip by load-balancing chance (found by
+        # executing the LAN manual test guide against the 2-replica deploy).
+        etag_body = {k: v for k, v in body.items() if k != "outbox_claim_instance"}
+        etag = hashlib.sha256(repr(etag_body).encode("utf-8")).hexdigest()[:16]
         if request.headers.get("if-none-match") == f'"{etag}"':
             return Response(content=b"", status_code=304)
         return Response(content=body, headers={"ETag": f'"{etag}"'})
