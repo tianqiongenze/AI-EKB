@@ -2,6 +2,21 @@
 
 本项目遵循显式版本记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] — 2026-09-20 管理台入集群 + 人工测试指南（九轮）
+
+### Added
+
+- **管理台集群部署**：`ekb-admin`（nginx + /api 反代控制面，NodePort 30881，镜像 0.1.1）——LAN 浏览器全功能人工测试入口。
+- **局域网人工测试操作指南**：`docs/ops/ekb-app-manual-test-guide.md`（阶段化手册：前置含 CCL 事务余量阻断项、<2 分钟冒烟、浏览器四页+大屏 13 项用例、TC-1~7 治理/事件/检索、观测验收、Go/No-Go 签收、故障处置表）。
+
+### Fixed
+
+- **ETag 副本稳定性**（执行自己的指南时发现）：readyz ETag 曾含 per-pod 字段致 If-None-Match 随机失效——ETag 改为对副本稳定字段计算（镜像 0.3.2）；304 判定按"内容合法跳变"语义修正（3 次 ≥2 次）。
+
+### Test
+
+- 91/91 + 四门禁；0.3.2 部署后冒烟/304/指标实测通过。综合 7.8 → **8.0**。
+
 ## [Unreleased] — 2026-09-20 CRDB 数据面真机部署（八轮）
 
 ### Added

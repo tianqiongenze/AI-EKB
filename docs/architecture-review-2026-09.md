@@ -476,3 +476,16 @@ flowchart LR
 | 评分 | 可扩展性 6.0→6.5（真实部署+压测数据），数据面成熟度提升；**综合 7.5 → 7.8**（§21 的 8.5 段"压测实证"已部分兑现） |
 
 完整报告：`docs/deploy-report-crdb-lan-2026-09-20.md`；决策：`docs/adr/ADR-005`。
+
+## 23. 九轮落地：管理台入集群 + 人工测试指南 + 自测抓真 bug（2026-09-20）
+
+| 项 | 结果 |
+|---|---|
+| 管理台部署 | `ekb-admin`（nginx + `/api` 代理 → 控制面，NodePort **30881**，镜像 0.1.1）——LAN 浏览器即可全功能人工测试 |
+| 人工测试指南 | `docs/ops/ekb-app-manual-test-guide.md`（ESP 09 格式：5 阶段 + 地址表 + 判定 + 处置 + Go/No-Go；对齐联网确认的 smoke 最佳实践：关键路径优先/<2min 冒烟/浏览器验业务流） |
+| **自测抓真 bug ①** | ETag 双副本不稳定：readyz body 含 per-pod `outbox_claim_instance`，负载均衡下 If-None-Match 随机 200——修复（ETag 排除 per-pod 字段），镜像 0.3.2 已部署验证 |
+| **自测发现 ②（语义澄清）** | 后台 relay 2s 跳变使 readyz/metrics 内容合法变化（200+新 ETag 是正确 HTTP 语义）——指南判定改为"3 次 ≥2 次 304"并注明原因，不伪装成 100% |
+| 联网对标 | [RadView](https://www.radview.com)/[TestMu](https://www.testmuai.com)/[OneUptime](https://www.oneuptime.com)：冒烟只测关键路径、保持分钟级、curl 快检 + 浏览器业务流——指南结构据此设计 |
+| 评分 | 测试与门禁 6.5→7.0（可执行人工测试体系 + 自测闭环）；部署与交付 7.8→8.0（管理台入集群，全栈 LAN 可测）；**综合 7.8 → 8.0** |
+
+运维补充：清理用旧部署残留 `kubectl -n ekb-app delete deploy,svc -l app=ekb-admin` 不需要（同名单次 apply）；回滚镜像标签 0.3.1-crdb 可用。
