@@ -1,21 +1,21 @@
 # Yadea Technology Group AI Knowledge Base Platform (EKB)
 
-> 技术栈（2026-09）：**Litestar 2.24（全异步 ASGI）+ Granian（Rust HTTP 服务器）+ Pydantic v2 + TiDB/Pulsar/Redis/Neo4j/Milvus + K8s/Helm/Kustomize + Go/Java 多语言服务**
+> 技术栈（2026-09）：**Litestar 2.24（全异步 ASGI）+ Granian（Rust HTTP 服务器）+ Pydantic v2 + CockroachDB/Pulsar/Redis/Neo4j/Milvus + K8s/Helm/Kustomize + Go/Java 多语言服务**
 
 ## 0. 项目速览（数字化看板）
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **88 Python + 11 Java + 8 前端组件** | 全栈测试矩阵 |
+| 测试 | **182 Python + 34 前端 + 11 Java** | 全栈测试矩阵（0.6.1 实测 `pytest tests/ -q` 182 passed，vitest 34 passed） |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
-| API 路由 | **37 个 / 11 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐（含 /retrieval/hybrid） |
-| 事件契约 | **17 类** | Pulsar topic 契约化管理 |
+| API 路由 | **53 个 / 16 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐；0.6.1 新增文档/RBAC/图谱/看板/语义缓存 5 上下文 |
+| 事件契约 | **21 类** | Pulsar topic 契约化管理；0.6.1 新增 document.ingested/deleted、graph.rebuilt、rbac.user.assigned |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **8.6 / 10** | §22-§24；剩余 0.9=E 组生产证据（用户决策维持现状，见 §21/§24） | 见 `docs/architecture-review-2026-09.md`（P0/P1/P2 路线图） |
+| 架构评审 | **8.9 / 10** | 0.6.1 部署实测复核；剩余 0.9+=E 组生产证据（用户决策维持现状）| 见 `docs/deploy-report-0.6.1-2026-09-21.md` |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
-| 前端多端 | admin M1.5 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 49.9KB）+ `web/mobile`（uni-app，鸿蒙路线） |
+| 前端多端 | admin M2 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 57.31KB；新增文档管理/知识检索/图谱探索/工业看板 4 页）+ `web/mobile`（uni-app，鸿蒙路线） |
 
 ### 系统架构一图
 
@@ -26,7 +26,7 @@ flowchart LR
     end
     Clients --> GW[Go 网关\n认证/限流/熔断/背压/canary]
     GW --> CP[Python 控制面\nLitestar + Granian\n36 路由 + /metrics]
-    CP --> DB[(TiDB\n控制面存储)]
+    CP --> DB[(CockroachDB\n控制面存储)]
     CP --> OB[Outbox → Pulsar\n17 类事件契约]
     CP --> V[向量/图/全文三索引\nMilvus / Neo4j]
     OB --> F[Flink + Iceberg\n湖仓数据飞轮]
@@ -36,7 +36,7 @@ flowchart LR
 ### 质量门禁流水线（一键脚本内建）
 
 ```text
-工具链自检 → 契约一致性(37路由/17事件/14字段) → Flink preflight → replay e2e SLO → gateway SLO → 构建/部署
+工具链自检 → 契约一致性(53路由/21事件) → Flink preflight → replay e2e SLO → gateway SLO → 构建/部署
 ```
 
 ### 架构深化：缓存 / 事件 / 检索三条主链路
@@ -47,7 +47,7 @@ flowchart LR
 flowchart LR
     REQ[读请求] --> L1[L1 进程内 TTL+LRU 60s]
     L1 -- miss --> L2[L2 Redis 300s]
-    L2 -- miss --> SRC[源: TiDB / Milvus]
+    L2 -- miss --> SRC[源: CockroachDB / Milvus]
     L1 & L2 & SRC --> M[/ekb_cache_hits_total{layer}/]
     W[写: 能力upsert / Skill晋级 / 向量upsert] -- 前缀失效 or registry epoch --> INV[失效通道] --> L1
 ```
@@ -56,7 +56,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    H[业务 handler] --> DB[(TiDB/SQLite
+    H[业务 handler] --> DB[(CRDB/SQLite
 业务表 + outbox_events 同事务)]
     DB --> R[后台 relay 循环
 原子认领 → 分组批量发布]
@@ -268,7 +268,7 @@ bash scripts/one_click_build_and_deploy.sh k8s
 bash scripts/one_click_shutdown_all.sh
 ```
 
-K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执行 `scripts/verify_k8s_stack.py` 校验。
+K8S 模式会先部署依赖中间件（Pulsar/CockroachDB/Redis/Neo4j/Milvus）并执行 `scripts/verify_k8s_stack.py` 校验。
 
 ## 4. 核心接口
 
@@ -323,7 +323,7 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 3. MCP Registry + Policy Engine + 审计追踪强绑定
 4. Harness 作为上线门禁（质量、安全、回归三门）
 5. SLO 驱动容量与成本优化（首 Token、P99、错误率、降级率）
-6. 生产数据库主选型使用 TiDB，开发测试允许 SQLite 回退
+6. 生产数据库主选型使用 CockroachDB（ADR-005，对齐 ESP ADR-24），SQLite 供开发回退（TiDB 驱动保留兼容但不再部署）
 
 ## 6. Phase-3-3 环境变量（显式清单 + 生产默认）
 
@@ -336,7 +336,7 @@ K8S 模式会先部署依赖中间件（Pulsar/TiDB/Redis/Neo4j/Milvus）并执�
 | `EKB_DB_DRIVER` | `sqlite` | `crdb` | 控制面关系库驱动（sqlite/tidb/crdb 三驱动） |
 | `EKB_CRDB_HOST/PORT/...` | 本机 | `cockroachdb.infra.svc.cluster.local:26257` | CRDB 连接族（follower-read 默认开） |
 | `EKB_DB_PATH` | `./data/control_plane.db` | `/var/lib/ekb/control_plane.db`（仅回退） | SQLite 回退路径 |
-| `EKB_TIDB_HOST` | `127.0.0.1` | `tidb-cluster-tidb` | TiDB 地址 |
+| `EKB_TIDB_HOST` | `127.0.0.1` | —（遗留驱动，生产用 CRDB） | TiDB 地址（兼容保留） |
 | `EKB_TIDB_PORT` | `4000` | `4000` | TiDB 端口 |
 | `EKB_TIDB_USER` | `root` | `ekb_app`（建议最小权限账号） | TiDB 用户 |
 | `EKB_TIDB_PASSWORD` | `` | `<from-secret>` | TiDB 密码 |
