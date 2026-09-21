@@ -39,6 +39,7 @@ from enterprise_ekb.middleware_clients import (
 )
 from enterprise_ekb.policy import PolicyEngine
 from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
+from enterprise_ekb.rbac import RBACService
 from enterprise_ekb.risk_control import (
     DistributedRateLimiter,
     NonceStore,
@@ -110,6 +111,7 @@ class ControlPlaneContext:
     neo4j_client: Any = None
     a2a_consumer: Any = None
     resolved_db_path: Any = None
+    rbac_service: Any = None
     auth_disabled_warning_emitted: bool = False
 
     @staticmethod
@@ -119,6 +121,25 @@ class ControlPlaneContext:
     @staticmethod
     def _run_with_retry(operation: Any, *, attempts: int, base_delay_ms: int) -> Any:
         return _run_with_retry(operation, attempts=attempts, base_delay_ms=base_delay_ms)
+
+    def _require_rbac_layer(self, user_id: str, needed_layer: str) -> None:
+        """RBAC 接线（审查 P1-5）：用户级凭据按 12 角色×4 层判定；服务级 token 不受限。
+        user_id 缺失或未知 → default_role（C2）兜底，仍是 fail-safe。"""
+        if self.rbac_service is None:
+            return
+        from enterprise_ekb.rbac import PermissionDeniedError
+
+        try:
+            self.rbac_service.require_layers(user_id, needed_layer)
+        except PermissionDeniedError as exc:
+            raise HTTPException(status_code=403, detail=f"permission_denied:{exc.role}:{exc.needed_layer}") from exc
+
+    def _extract_user_id(self, request: Request) -> str | None:
+        """从 Bearer token 提取用户身份：约定格式 `Bearer user:<user_id>`（用户级凭据）。"""
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer user:"):
+            return auth_header[len("Bearer user:"):]
+        return None
 
     def _require_admin_auth(self, request: Request) -> str:
         if not self.config.auth_token:
@@ -151,6 +172,10 @@ class ControlPlaneContext:
         auth_header = request.headers.get("authorization", "")
         if secrets.compare_digest(auth_header, f"Bearer {self.config.auth_token}"):
             return True
+        if auth_header.startswith("Bearer user:"):
+            # 用户级凭据：身份走 RBAC 层判定（_extract_user_id + require_layers）；
+            # 服务级 token 与用户级凭据是两族凭据，前者静态比较，后者角色授权。
+            return self.rbac_service is not None and auth_header[len("Bearer user:"):] != ""
         return verify_bearer_credential(
             auth_header,
             self.config.auth_token,
@@ -409,5 +434,6 @@ def build_context(config: AppConfig, db_path: str | None = None) -> ControlPlane
         neo4j_client=neo4j_client,
         a2a_consumer=a2a_consumer,
         resolved_db_path=resolved_db_path,
+        rbac_service=RBACService(store=store),
         auth_disabled_warning_emitted=False,
     )

@@ -183,12 +183,12 @@ def test_graph_api_endpoints() -> None:
         )
         assert build.status_code == 200
         assert build.json()["nodes"] >= 2
-        stats = client.get("/graph/stats")
+        stats = client.get("/graph/stats", headers=headers)
         assert stats.status_code == 200 and stats.json()["nodes"] >= 2
-        search = client.get("/graph/search", params={"keyword": "车架"})
+        search = client.get("/graph/search", params={"keyword": "车架"}, headers=headers)
         assert search.status_code == 200
         assert search.json()["results"]
-        neighbors = client.get("/graph/neighbors", params={"entity": "车架", "hops": 1})
+        neighbors = client.get("/graph/neighbors", params={"entity": "车架", "hops": 1}, headers=headers)
         assert neighbors.status_code == 200
         assert neighbors.json()["nodes"]
 

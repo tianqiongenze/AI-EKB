@@ -34,10 +34,14 @@ def routes(ctx: ControlPlaneContext) -> list:
                 limit=tenant_region_override or ctx.config.mcp_rate_limit_per_minute,
             ):
                 raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
-        # LCO 三层语义缓存：命中直接返回（cache_hit/cache_layer 元数据透传，OSW 铁律）
+        # LCO 三层语义缓存：命中直接返回（cache_hit/cache_layer 元数据透传，OSW 铁律）。
+        # 审查 P0-1 修复：key 绑定租户/区域/操作者（跨租户隔离）；命中也写审计+outbox（治理链不断）。
         from enterprise_ekb.api.llm_cache import _SEMANTIC_CACHE
 
-        cache_system_key = f"mcp:{data.skill_name}:{data.skill_version}:{data.tool_name}"
+        cache_system_key = (
+            f"mcp:{data.tenant_id}:{data.region_id}:{data.user_or_agent_id}"
+            f":{data.skill_name}:{data.skill_version}:{data.tool_name}"
+        )
         cache_user_key = json.dumps(data.payload, ensure_ascii=False, sort_keys=True, default=str)
         cached = _SEMANTIC_CACHE.get(cache_system_key, cache_user_key)
         if cached is not None:
@@ -46,6 +50,31 @@ def routes(ctx: ControlPlaneContext) -> list:
                 answer_data = json.loads(answer) if isinstance(answer, str) else answer
             except (TypeError, ValueError):
                 answer_data = answer
+            ctx.store.append_audit(
+                tenant_id=data.tenant_id,
+                region_id=data.region_id,
+                plant_id=data.plant_id,
+                user_or_agent_id=data.user_or_agent_id,
+                skill_name=data.skill_name,
+                skill_version=data.skill_version,
+                tool_name=data.tool_name,
+                decision_reason="semantic_cache_hit",
+                accepted=True,
+                payload=data.payload,
+            )
+            ctx.store.enqueue_outbox(
+                event_type="mcp.invoked",
+                payload={
+                    "tenant_id": data.tenant_id,
+                    "region_id": data.region_id,
+                    "plant_id": data.plant_id,
+                    "skill": f"{data.skill_name}:{data.skill_version}",
+                    "tool": data.tool_name,
+                    "accepted": True,
+                    "reason": "semantic_cache_hit",
+                    "cache_layer": layer,
+                },
+            )
             return {
                 "accepted": True,
                 "reason": "semantic_cache_hit",
@@ -85,11 +114,13 @@ def routes(ctx: ControlPlaneContext) -> list:
         if not response.accepted:
             raise HTTPException(status_code=403, detail=response.decision_reason)
         # 未命中→回填缓存（仅接受的成功响应）
-        _SEMANTIC_CACHE.put(
-            cache_system_key,
-            cache_user_key,
-            response.data if isinstance(response.data, str) else json.dumps(response.data, ensure_ascii=False, sort_keys=True, default=str),
-        )
+        # 审查 P0-1 修复：仅幂等工具（ask/search 等）入缓存——非幂等写工具（ingest/execute）跳过
+        if data.tool_name in {"ask", "search", "query", "retrieve", "chat"}:
+            _SEMANTIC_CACHE.put(
+                cache_system_key,
+                cache_user_key,
+                response.data if isinstance(response.data, str) else json.dumps(response.data, ensure_ascii=False, sort_keys=True, default=str),
+            )
         return {
             "accepted": response.accepted,
             "reason": response.decision_reason,
@@ -104,6 +135,19 @@ def routes(ctx: ControlPlaneContext) -> list:
         """SSE streaming LLM invocation (first-token + incremental tokens)."""
         if ctx.config.auth_token and not ctx._bearer_matches(request):
             raise HTTPException(status_code=401, detail="unauthorized")
+        # 审查 P1-7 修复：stream 与 invoke 共用租户限流（防治理旁路）
+        limit_result = ctx.mcp_rate_limiter.allow()
+        if not limit_result.allowed:
+            raise HTTPException(status_code=429, detail="rate_limited")
+        tenant_region_key = f"{data.tenant_id}:{data.region_id}"
+        tenant_region_override = ctx.config.tenant_region_rate_limits.get(tenant_region_key)
+        tenant_region_limit = ctx.tenant_region_mcp_limiter.allow(
+            tenant_id=data.tenant_id,
+            region_id=data.region_id,
+            override_tokens_per_minute=tenant_region_override,
+        )
+        if not tenant_region_limit.allowed:
+            raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
         async def stream():
             async for chunk in ctx.mcp_gateway.invoke_stream(data):
                 yield chunk

@@ -110,33 +110,45 @@ class SemanticCache:
             if entry is not None:
                 self._store.pop(key, None)
 
-            # L2 semantic layer — only when an embedding function is wired.
-            if self.embedding_fn is None:
+        # L2 semantic layer — embedding call MUST run outside the lock (审查 P1-8:
+        # 网络调用持全局锁会阻塞所有 put/get)。扫描用锁内快照，容忍并发写入的竞态
+        # （最坏情形是 miss 一次，下次命中——缓存语义可接受）。
+        if self.embedding_fn is None:
+            with self._lock:
+                self._misses += 1
+            return None
+        try:
+            query_vec = self.embedding_fn(sys_p + "\x00" + usr_p)
+        except Exception:
+            # Embedding backend failure must never break the request path (RWT);
+            # degrade to a miss rather than propagate.
+            with self._lock:
+                self._misses += 1
+            return None
+        if not query_vec:
+            with self._lock:
+                self._misses += 1
+            return None
+        with self._lock:
+            snapshot = list(self._store.items())
+        best_key: str | None = None
+        best_score = 0.0
+        for cand_key, cand in snapshot:
+            if cand_key == key or cand.embedding is None or not self._fresh(cand, time.monotonic()):
+                continue
+            score = _cosine(query_vec, cand.embedding)
+            if score >= self.similarity_threshold and score >= best_score:
+                best_key = cand_key
+                best_score = score
+        if best_key is None:
+            with self._lock:
+                self._misses += 1
+            return None
+        with self._lock:
+            best = self._store.get(best_key)
+            if best is None:
                 self._misses += 1
                 return None
-            try:
-                query_vec = self.embedding_fn(sys_p + "\x00" + usr_p)
-            except Exception:
-                # Embedding backend failure must never break the request path (RWT);
-                # degrade to a miss rather than propagate.
-                self._misses += 1
-                return None
-            if not query_vec:
-                self._misses += 1
-                return None
-            best_key: str | None = None
-            best_score = 0.0
-            for cand_key, cand in self._store.items():
-                if cand_key == key or cand.embedding is None or not self._fresh(cand, now):
-                    continue
-                score = _cosine(query_vec, cand.embedding)
-                if score >= self.similarity_threshold and score >= best_score:
-                    best_key = cand_key
-                    best_score = score
-            if best_key is None:
-                self._misses += 1
-                return None
-            best = self._store[best_key]
             self._store.move_to_end(best_key)
             self._hits_l2 += 1
             return best.answer, 2

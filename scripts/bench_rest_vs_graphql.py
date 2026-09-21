@@ -21,6 +21,13 @@ import json
 import statistics
 import time
 import urllib.request
+
+try:
+    import httpx
+
+    _HTTPX_AVAILABLE = True
+except ImportError:
+    _HTTPX_AVAILABLE = False
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
@@ -137,6 +144,8 @@ def main() -> None:
     ap.add_argument("--samples", type=int, default=200)
     ap.add_argument("--concurrency", default="1,8")
     ap.add_argument("--out", default="")
+    ap.add_argument("--pooled", action="store_true",
+                    help="用 httpx 连接池复测（消除无池客户端的握手/限流噪声——0.7.1 口径修正）")
     args = ap.parse_args()
 
     doc_id = fetch_doc_id(args.base)
@@ -155,6 +164,7 @@ def main() -> None:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "target": args.base,
         "samples_per_run": args.samples,
+        "pooled_client": bool(args.pooled and _HTTPX_AVAILABLE),
         "results": results,
     }
     out = args.out or f"docs/bench/bench-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')}.json"

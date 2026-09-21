@@ -286,3 +286,68 @@ def test_api_assign_list_delete_user_role_binding(rbac_client: Any) -> None:
 def test_api_assign_invalid_role_returns_400(rbac_client: Any) -> None:
     resp = rbac_client.post("/admin/rbac/users", json={"user_id": "bad-role-user", "role": "Z9"})
     assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# RBAC 接线（0.7.1）：用户级凭据走角色层判定
+# ---------------------------------------------------------------------------
+def _bind(client, user_id, role, token):
+    return client.post(
+        "/admin/rbac/users",
+        json={"user_id": user_id, "role": role},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+def test_rbac_enforcement_c2_user_cannot_ingest(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from enterprise_ekb.app import create_app
+
+    monkeypatch.setenv("EKB_AUTH_TOKEN", "t1")
+    app = create_app(db_path=str(tmp_path / "rbac_wire.db"))
+    c = TestClient(app)
+    import base64
+
+    body = {"source_name": "x.md", "source_type": "md",
+            "content_b64": base64.b64encode(b"# hi").decode()}
+    # 绑定 user-c2 为 C2（P4 功能级）→ 写文档需 P3 → 403
+    r = _bind(c, "user-c2", "C2", "t1")
+    assert r.status_code == 200
+    resp = c.post("/documents/ingest", json=body, headers={"Authorization": "Bearer user:user-c2"})
+    assert resp.status_code == 403
+
+
+def test_rbac_enforcement_b1_user_can_ingest(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from enterprise_ekb.app import create_app
+
+    monkeypatch.setenv("EKB_AUTH_TOKEN", "t1")
+    app = create_app(db_path=str(tmp_path / "rbac_wire2.db"))
+    c = TestClient(app)
+    import base64
+
+    body = {"source_name": "y.md", "source_type": "md",
+            "content_b64": base64.b64encode(b"# ok").decode()}
+    r = _bind(c, "user-b1", "B1", "t1")
+    assert r.status_code == 200
+    resp = c.post("/documents/ingest", json=body, headers={"Authorization": "Bearer user:user-b1"})
+    assert resp.status_code == 200
+
+
+def test_rbac_service_token_bypasses_layer_check(monkeypatch, tmp_path):
+    """服务级 token（非 user: 前缀）不做 RBAC 层判定——系统服务直通。"""
+    from fastapi.testclient import TestClient
+
+    from enterprise_ekb.app import create_app
+
+    monkeypatch.setenv("EKB_AUTH_TOKEN", "t1")
+    app = create_app(db_path=str(tmp_path / "rbac_wire3.db"))
+    c = TestClient(app)
+    import base64
+
+    body = {"source_name": "z.md", "source_type": "md",
+            "content_b64": base64.b64encode(b"# svc").decode()}
+    resp = c.post("/documents/ingest", json=body, headers={"Authorization": "Bearer t1"})
+    assert resp.status_code == 200

@@ -23,7 +23,8 @@ _SEMANTIC_CACHE = SemanticCache()
 
 def routes(ctx: Any) -> list:
     @get("/llm-cache/stats", sync_to_thread=True)
-    def llm_cache_stats() -> dict:
+    def llm_cache_stats(request: Request) -> dict:
+        ctx._require_auth(request)
         payload = _SEMANTIC_CACHE.stats()
         payload.setdefault("cache_hit", False)
         payload.setdefault("cache_layer", "none")

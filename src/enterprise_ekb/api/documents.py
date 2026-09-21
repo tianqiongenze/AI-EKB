@@ -36,7 +36,7 @@ class DocumentIngestRequest(BaseModel):
     source_name: str = Field(min_length=1, max_length=512)
     source_type: str = Field(min_length=1, max_length=32)
     tenant_id: str = Field(default="group", max_length=191)
-    content_b64: str = Field(min_length=1)
+    content_b64: str = Field(min_length=1, max_length=27_000_000)  # ≈20MB 原始（b64 1.33x 放大上限，DoS 面控制）
     metadata: dict = Field(default_factory=dict)
 
 
@@ -44,6 +44,9 @@ def routes(ctx: ControlPlaneContext) -> list:
     @post("/documents/ingest", status_code=200, sync_to_thread=True)
     def ingest_document(data: DocumentIngestRequest, request: Request) -> dict:
         ctx._require_admin_auth(request)
+        user_id = ctx._extract_user_id(request)
+        if user_id is not None:
+            ctx._require_rbac_layer(user_id, "P3")  # 文档写入=数据级操作
         source_type = data.source_type.lower().lstrip(".")
         if source_type not in _SUPPORTED_TYPES and source_type not in {
             "doc",
@@ -190,6 +193,9 @@ def routes(ctx: ControlPlaneContext) -> list:
     @delete("/documents/{doc_id:str}", status_code=200, sync_to_thread=True)
     def delete_document(request: Request, doc_id: str) -> dict:
         ctx._require_admin_auth(request)
+        user_id = ctx._extract_user_id(request)
+        if user_id is not None:
+            ctx._require_rbac_layer(user_id, "P3")
         doc = ctx.store.get_document(doc_id)
         if doc is None:
             raise HTTPException(status_code=404, detail="document_not_found")

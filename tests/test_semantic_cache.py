@@ -187,7 +187,7 @@ def test_llm_cache_stats_endpoint() -> None:
 
     os.environ.setdefault("EKB_AUTH_TOKEN", "cache-token")
     with TestClient(create_app()) as client:
-        resp = client.get("/llm-cache/stats")
+        resp = client.get("/llm-cache/stats", headers={"Authorization": "Bearer cache-token"})
         assert resp.status_code == 200
         body = resp.json()
         assert "hits_l1" in body and "cache_layer" in body
