@@ -1,63 +1,17 @@
 from __future__ import annotations
 
-import os
-import time
-import uuid
-from typing import Any, cast
-
-from litestar import Request, Response, get, post
+from litestar import Request, post
 from litestar.exceptions import HTTPException
 
 from enterprise_ekb.api.context import ControlPlaneContext
 from enterprise_ekb.capacity import estimate_capacity
 from enterprise_ekb.schemas import (
-    A2APriority,
-    A2ASupervisionAlert,
-    A2ASupervisionScanRequest,
-    A2ASupervisionScanResult,
-    A2AEnvelope,
     AuditQuery,
-    BusinessCapabilityManifest,
     CapacityEstimateRequest,
     CapacityEstimateResult,
-    ConnectorEnvelope,
-    ConnectorHealthRequest,
-    ConnectorHealthResult,
-    ConnectorProfile,
-    ConnectorProfileListRequest,
-    ConnectorProfileUpsertRequest,
-    ConnectorPullRequest,
-    ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
-    ConnectorReplayRequest,
-    ConnectorReplayResult,
-    DomainBootstrapRequest,
-    DomainCapabilitySearchRequest,
-    DomainCapabilitySearchResult,
-    DomainCoverageResponse,
-    DataFlywheelEvent,
-    DataPipelineSupervisionScanRequest,
-    DataPipelineSupervisionScanResult,
-    DataLakeTableSpec,
-    FlinkPipelineSpec,
-    GatewayInvokeRequest,
-    GraphUpsertRequest,
     HarnessEvaluationRequest,
     HarnessEvaluationResult,
-    RelayRequest,
-    SkillManifest,
-    SkillPromotionRequest,
-    SubAgentTaskRecord,
-    SubAgentTaskRequest,
-    SubAgentTaskResult,
-    SubAgentTaskStatus,
-    VectorSearchRequest,
-    VectorSearchResult,
-    VectorUpsertRequest,
 )
-
 
 
 def routes(ctx: ControlPlaneContext) -> list:
@@ -91,7 +45,7 @@ def routes(ctx: ControlPlaneContext) -> list:
             raise HTTPException(status_code=401, detail="unauthorized")
         # Pure compute: cache by payload hash (audit event below still emitted every call).
         cache_key = ctx.cache.key("capacity", data.model_dump(mode="json"))
-        hit, cached = ctx.cache.get_or_load(
+        _hit, cached = ctx.cache.get_or_load(
             cache_key,
             lambda: estimate_capacity(data).model_dump(mode="json"),
             ttl_seconds=3600,
@@ -115,7 +69,7 @@ def routes(ctx: ControlPlaneContext) -> list:
         ctx._require_admin_auth(request)
         # Read-mostly: short TTL without invalidation (append-only audit log).
         cache_key = ctx.cache.key("audit:recent", data.limit)
-        hit, cached = ctx.cache.get_or_load(
+        _hit, cached = ctx.cache.get_or_load(
             cache_key,
             lambda: ctx.store.recent_audits(limit=data.limit),
             ttl_seconds=30,

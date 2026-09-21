@@ -21,10 +21,10 @@ callers relying on read-your-write must use the primary-path methods.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import threading
 import uuid
-from pathlib import Path
 from typing import Any
 
 from enterprise_ekb.schemas import (
@@ -34,7 +34,6 @@ from enterprise_ekb.schemas import (
     ConnectorAdapterType,
     ConnectorAuthType,
     ConnectorEnvelope,
-    ConnectorDirection,
     ConnectorProfile,
     ConnectorProfileStatus,
     ConnectorRunStatus,
@@ -44,12 +43,12 @@ from enterprise_ekb.schemas import (
     SubAgentTaskRecord,
     SubAgentTaskStatus,
 )
-from enterprise_ekb.storage import SQLiteControlPlaneStore, SkillRow
+from enterprise_ekb.storage import SkillRow, SQLiteControlPlaneStore
 
 try:
     import psycopg2
-    import psycopg2.extras
     import psycopg2.extensions
+    import psycopg2.extras
 except ImportError:
     psycopg2 = None
 
@@ -113,7 +112,8 @@ def _row_jsonable(value: Any) -> Any:
 
     psycopg2 returns datetime/Decimal objects; the cache layer json.dumps and
     HTTP encoders need primitives (audit-query 500 regression, 2026-09-20)."""
-    from datetime import date as _date, datetime as _dt
+    from datetime import date as _date
+    from datetime import datetime as _dt
     from decimal import Decimal as _Decimal
 
     if isinstance(value, dict):
@@ -153,15 +153,15 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     ) -> None:
         if psycopg2 is None:
             raise RuntimeError("psycopg2 is required for CockroachDB mode")
-        connect_kwargs: dict[str, Any] = dict(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            dbname=database,
-            connect_timeout=10,
-            sslmode="disable",
-        )
+        connect_kwargs: dict[str, Any] = {
+            "host": host,
+            "port": port,
+            "user": user,
+            "password": password,
+            "dbname": database,
+            "connect_timeout": 10,
+            "sslmode": "disable",
+        }
         self._conn = _ThreadLocalPgConnection(connect_kwargs)
         self._follower_reads = follower_reads
         self._instance_id = f"crdb-{uuid.uuid4().hex[:12]}"
@@ -184,10 +184,8 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._conn.commit()
 
     def _rollback(self) -> None:
-        try:
+        with contextlib.suppress(Exception):
             self._conn.rollback()
-        except Exception:
-            pass
 
     def _follower_clause(self) -> str:
         """Deprecated: statement-level AS OF breaks on txn reuse (CRDB v24.3).
@@ -406,6 +404,51 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                 applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
             )
             """,
+            # P0-② document pipeline + P0-④ RBAC (PG dialect)
+            """
+            CREATE TABLE IF NOT EXISTS documents (
+                doc_id VARCHAR(191) NOT NULL PRIMARY KEY,
+                tenant_id VARCHAR(191) NOT NULL,
+                source_name VARCHAR(512) NOT NULL,
+                source_type VARCHAR(32) NOT NULL,
+                mime_type VARCHAR(191) NOT NULL,
+                content_sha256 VARCHAR(64) NOT NULL,
+                status VARCHAR(32) NOT NULL,
+                page_count INT NOT NULL DEFAULT 0,
+                chunk_count INT NOT NULL DEFAULT 0,
+                error TEXT NOT NULL DEFAULT '',
+                metadata_json JSONB NOT NULL DEFAULT '{}'::JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_documents_tenant_created ON documents (tenant_id, created_at)",
+            """
+            CREATE TABLE IF NOT EXISTS document_chunks (
+                chunk_id VARCHAR(64) NOT NULL,
+                doc_id VARCHAR(191) NOT NULL,
+                seq INT NOT NULL,
+                chunk_type VARCHAR(16) NOT NULL,
+                parent_id VARCHAR(64) NOT NULL DEFAULT '',
+                content TEXT NOT NULL,
+                tokens INT NOT NULL DEFAULT 0,
+                metadata_json JSONB NOT NULL DEFAULT '{}'::JSONB,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                PRIMARY KEY (doc_id, chunk_id)
+            )
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_document_chunks_doc_seq ON document_chunks (doc_id, seq)",
+            "CREATE INDEX IF NOT EXISTS idx_document_chunks_type ON document_chunks (chunk_type)",
+            """
+            CREATE TABLE IF NOT EXISTS rbac_users (
+                user_id VARCHAR(191) NOT NULL PRIMARY KEY,
+                role VARCHAR(16) NOT NULL,
+                tenant_id VARCHAR(191) NOT NULL DEFAULT 'group',
+                department VARCHAR(191) NOT NULL DEFAULT '',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """,
         ]
         conn = self._conn._current()
         with conn.cursor() as cur:
@@ -422,11 +465,221 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         return None
 
     # ------------------------------------------------------------------
+    # P0-② documents + P0-④ RBAC (PG dialect overrides)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _document_row_to_dict(row: dict | None) -> dict | None:
+        if row is None:
+            return None
+        doc = _row_jsonable(dict(row))
+        raw_meta = doc.pop("metadata_json", None) or {}
+        if isinstance(raw_meta, str):
+            try:
+                raw_meta = json.loads(raw_meta)
+            except (TypeError, ValueError):
+                raw_meta = {}
+        doc["metadata"] = raw_meta if isinstance(raw_meta, dict) else {}
+        return doc
+
+    @_write_op
+    def upsert_document(self, doc: dict) -> None:
+        if doc is None:
+            raise ValueError("doc_required")
+        with self._cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO documents (
+                    doc_id, tenant_id, source_name, source_type, mime_type,
+                    content_sha256, status, page_count, chunk_count, error, metadata_json
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ON CONFLICT (doc_id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    page_count = EXCLUDED.page_count,
+                    chunk_count = EXCLUDED.chunk_count,
+                    error = EXCLUDED.error,
+                    metadata_json = EXCLUDED.metadata_json,
+                    updated_at = now()
+                """,
+                (
+                    doc.get("doc_id", ""),
+                    doc.get("tenant_id", "group"),
+                    doc.get("source_name", "")[:512],
+                    doc.get("source_type", ""),
+                    doc.get("mime_type", ""),
+                    doc.get("content_sha256", ""),
+                    doc.get("status", "parsed"),
+                    int(doc.get("page_count", 0) or 0),
+                    int(doc.get("chunk_count", 0) or 0),
+                    str(doc.get("error", "") or ""),
+                    _ensure_json(doc.get("metadata", {})),
+                ),
+            )
+        self._commit()
+
+    def get_document(self, doc_id: str) -> dict | None:
+        if not doc_id:
+            return None
+        rows = self._read_only_txn(
+            [("SELECT * FROM documents WHERE doc_id = %s", (doc_id,))]
+        )
+        return self._document_row_to_dict(rows[0] if rows else None)
+
+    def list_documents(self, tenant_id: str | None = None, limit: int = 50) -> list[dict]:
+        effective_limit = max(1, min(int(limit or 50), 200))
+        if tenant_id:
+            rows = self._read_only_txn(
+                [
+                    (
+                        "SELECT * FROM documents WHERE tenant_id = %s ORDER BY created_at DESC LIMIT %s",
+                        (tenant_id, effective_limit),
+                    )
+                ]
+            )
+        else:
+            rows = self._read_only_txn(
+                [("SELECT * FROM documents ORDER BY created_at DESC LIMIT %s", (effective_limit,))]
+            )
+        out: list[dict] = []
+        for row in rows:
+            mapped = self._document_row_to_dict(row)
+            if mapped is not None:
+                out.append(mapped)
+        return out
+
+    @_write_op
+    def replace_document_chunks(self, doc_id: str, chunks: list[dict]) -> None:
+        if not doc_id:
+            raise ValueError("doc_id_required")
+        if chunks is None:
+            chunks = []
+        with self._cursor() as cur:
+            cur.execute("DELETE FROM document_chunks WHERE doc_id = %s", (doc_id,))
+            for chunk in chunks:
+                raw_meta = chunk.get("metadata_json", "{}") or "{}"
+                if isinstance(raw_meta, dict):
+                    raw_meta = json.dumps(raw_meta, ensure_ascii=False)
+                cur.execute(
+                    """
+                    INSERT INTO document_chunks (
+                        chunk_id, doc_id, seq, chunk_type, parent_id,
+                        content, tokens, metadata_json
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        chunk.get("chunk_id", ""),
+                        doc_id,
+                        int(chunk.get("seq", 0) or 0),
+                        chunk.get("chunk_type", "text"),
+                        chunk.get("parent_id", "") or "",
+                        chunk.get("content", ""),
+                        int(chunk.get("tokens", 0) or 0),
+                        raw_meta,
+                    ),
+                )
+        self._commit()
+
+    def list_document_chunks(
+        self, doc_id: str, chunk_type: str | None = None, limit: int = 200
+    ) -> list[dict]:
+        if not doc_id:
+            return []
+        effective_limit = max(1, min(int(limit or 200), 1000))
+        if chunk_type:
+            rows = self._read_only_txn(
+                [
+                    (
+                        """
+                        SELECT chunk_id, doc_id, seq, chunk_type, parent_id, content, tokens, metadata_json
+                        FROM document_chunks WHERE doc_id = %s AND chunk_type = %s
+                        ORDER BY seq LIMIT %s
+                        """,
+                        (doc_id, chunk_type, effective_limit),
+                    )
+                ]
+            )
+        else:
+            rows = self._read_only_txn(
+                [
+                    (
+                        """
+                        SELECT chunk_id, doc_id, seq, chunk_type, parent_id, content, tokens, metadata_json
+                        FROM document_chunks WHERE doc_id = %s
+                        ORDER BY seq LIMIT %s
+                        """,
+                        (doc_id, effective_limit),
+                    )
+                ]
+            )
+        out: list[dict] = []
+        for row in rows or []:
+            item = _row_jsonable(dict(row))
+            raw_meta = item.pop("metadata_json", None) or {}
+            if isinstance(raw_meta, str):
+                try:
+                    raw_meta = json.loads(raw_meta)
+                except (TypeError, ValueError):
+                    raw_meta = {}
+            item["metadata"] = raw_meta if isinstance(raw_meta, dict) else {}
+            out.append(item)
+        return out
+
+    @_write_op
+    def upsert_user(
+        self, user_id: str, role: str, tenant_id: str = "group", department: str = ""
+    ) -> None:
+        if not user_id or not role:
+            raise ValueError("user_id_and_role_required")
+        with self._cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO rbac_users (user_id, role, tenant_id, department)
+                VALUES (%s,%s,%s,%s)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    role = EXCLUDED.role,
+                    tenant_id = EXCLUDED.tenant_id,
+                    department = EXCLUDED.department,
+                    updated_at = now()
+                """,
+                (user_id, role, tenant_id or "group", department or ""),
+            )
+        self._commit()
+
+    def get_user_role(self, user_id: str) -> str | None:
+        if not user_id:
+            return None
+        rows = self._read_only_txn(
+            [("SELECT role FROM rbac_users WHERE user_id = %s", (user_id,))]
+        )
+        return rows[0]["role"] if rows else None
+
+    def list_users(self) -> list[dict]:
+        rows = self._read_only_txn(
+            [
+                (
+                    """
+                    SELECT user_id, role, tenant_id, department, created_at, updated_at
+                    FROM rbac_users ORDER BY user_id
+                    """,
+                    (),
+                )
+            ]
+        )
+        return [_row_jsonable(dict(row)) for row in rows or []]
+
+    @_write_op
+    def delete_user(self, user_id: str) -> None:
+        if not user_id:
+            raise ValueError("user_id_required")
+        with self._cursor() as cur:
+            cur.execute("DELETE FROM rbac_users WHERE user_id = %s", (user_id,))
+        self._commit()
+
+    # ------------------------------------------------------------------
     # skills
     # ------------------------------------------------------------------
 
     def list_skills(self) -> list[SkillRow]:
-        sql = f"SELECT * FROM skills ORDER BY skill_name, version"
+        sql = "SELECT * FROM skills ORDER BY skill_name, version"
         with self._cursor() as cur:
             cur.execute(sql)
             rows = cur.fetchall()
@@ -528,7 +781,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
 
     def recent_audits(self, limit: int) -> list[dict[str, Any]]:
         statements = [(
-            f"SELECT * FROM audits ORDER BY id DESC LIMIT %s",
+            "SELECT * FROM audits ORDER BY id DESC LIMIT %s",
             (limit,),
         )]
         raw = self._read_only_txn(statements)
@@ -638,7 +891,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
 
     def recent_outbox_events(self, limit: int) -> list[dict[str, Any]]:
         statements = [(
-            f"SELECT id, event_type, payload_json, status, created_at FROM outbox_events ORDER BY id DESC LIMIT %s",
+            "SELECT id, event_type, payload_json, status, created_at FROM outbox_events ORDER BY id DESC LIMIT %s",
             (limit,),
         )]
         rows = self._read_only_txn(statements)
@@ -654,7 +907,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     def get_sub_agent_task(self, task_id: str) -> SubAgentTaskRecord | None:
         with self._cursor() as cur:
             cur.execute(
-                f"SELECT * FROM sub_agent_tasks WHERE task_id = %s",
+                "SELECT * FROM sub_agent_tasks WHERE task_id = %s",
                 (task_id,),
             )
             row = cur.fetchone()
@@ -697,7 +950,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     def list_sub_agent_tasks_by_supervisor(self, supervisor_id: str, limit: int) -> list[SubAgentTaskRecord]:
         with self._cursor() as cur:
             cur.execute(
-                f"SELECT * FROM sub_agent_tasks WHERE supervisor_id=%s ORDER BY id DESC LIMIT %s",
+                "SELECT * FROM sub_agent_tasks WHERE supervisor_id=%s ORDER BY id DESC LIMIT %s",
                 (supervisor_id, limit),
             )
             rows = cur.fetchall()
@@ -808,7 +1061,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             )
             like = f"%{escaped}%"
             params.extend([like, like, like])
-        sql = f"SELECT * FROM business_capabilities"
+        sql = "SELECT * FROM business_capabilities"
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY domain, capability_type, title LIMIT %s"
@@ -888,7 +1141,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         if status is not None:
             clauses.append("status = %s")
             params.append(status.value)
-        sql = f"SELECT * FROM connector_envelopes"
+        sql = "SELECT * FROM connector_envelopes"
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY id DESC LIMIT %s"
@@ -939,7 +1192,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._commit()
 
     def list_connector_profiles(self, connector_system: ConnectorSystem | None = None) -> list[ConnectorProfile]:
-        sql = f"SELECT * FROM connector_profiles"
+        sql = "SELECT * FROM connector_profiles"
         params: tuple[Any, ...] = ()
         if connector_system is not None:
             sql += " WHERE connector_system = %s"
@@ -1032,7 +1285,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     def list_connector_pull_runs(self, connector_system: ConnectorSystem, profile_name: str, limit: int = 20) -> list[dict[str, Any]]:
         with self._cursor() as cur:
             cur.execute(
-                f"SELECT * FROM connector_pull_runs WHERE connector_system=%s AND profile_name=%s ORDER BY id DESC LIMIT %s",
+                "SELECT * FROM connector_pull_runs WHERE connector_system=%s AND profile_name=%s ORDER BY id DESC LIMIT %s",
                 (connector_system.value, profile_name, limit),
             )
             rows = cur.fetchall()

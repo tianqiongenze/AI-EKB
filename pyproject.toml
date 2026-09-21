@@ -23,9 +23,16 @@ dependencies = [
   "PyJWT>=2.8.0",
   "psycopg2-binary>=2.9.9",
   "setuptools<81",
+  "PyMuPDF>=1.24.0",
+  "python-docx>=1.1.0",
+  "python-pptx>=0.6.23",
 ]
 
 [project.optional-dependencies]
+ocr = [
+  "paddleocr>=2.7.0",
+  "paddlepaddle>=2.6.0",
+]
 dev = [
   "pytest>=8.2.0",
   "grpcio-tools>=1.62.2",
@@ -36,3 +43,16 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = "pymupdf.*"
+# pymupdf py.typed 不完整：Document.__init__ 未标注（no-untyped-call），库侧问题
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = "pymupdf"
+disallow_untyped_calls = false

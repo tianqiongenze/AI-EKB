@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
 from typing import Any
 
 from enterprise_ekb.schemas import (
@@ -40,7 +39,7 @@ def _find_baseline(domain: BusinessDomain) -> DomainBaseline:
     for baseline in DOMAIN_BASELINES:
         if baseline.domain == domain:
             return baseline
-    return DomainBaseline(domain=domain, required_capabilities=tuple())
+    return DomainBaseline(domain=domain, required_capabilities=())
 
 
 class DomainCapabilityService:
@@ -58,7 +57,7 @@ class DomainCapabilityService:
         if self._cache is None:
             return self._search_uncached(domain=domain, query=query, limit=limit)
         cache_key = self._cache.key("domain:search", domain, query, limit)
-        hit, cached = self._cache.get_or_load(
+        _hit, cached = self._cache.get_or_load(
             cache_key,
             lambda: self._search_uncached(domain=domain, query=query, limit=limit).model_dump(mode="json"),
         )
@@ -74,7 +73,7 @@ class DomainCapabilityService:
         if self._cache is None:
             return self._coverage_uncached()
         cache_key = self._cache.key("domain:coverage")
-        hit, cached = self._cache.get_or_load(
+        _hit, cached = self._cache.get_or_load(
             cache_key,
             lambda: self._coverage_uncached().model_dump(mode="json"),
         )

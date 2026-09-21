@@ -1,64 +1,11 @@
 from __future__ import annotations
 
 import hashlib
-import os
-import time
-import uuid
-from typing import Any, cast
 
-from litestar import Request, Response, get, post
-from litestar.exceptions import HTTPException
+from litestar import Request, Response, get
 
 from enterprise_ekb.api.context import ControlPlaneContext
 from enterprise_ekb.metrics import registry as metrics_registry
-from enterprise_ekb.schemas import (
-    A2APriority,
-    A2ASupervisionAlert,
-    A2ASupervisionScanRequest,
-    A2ASupervisionScanResult,
-    A2AEnvelope,
-    AuditQuery,
-    BusinessCapabilityManifest,
-    CapacityEstimateRequest,
-    CapacityEstimateResult,
-    ConnectorEnvelope,
-    ConnectorHealthRequest,
-    ConnectorHealthResult,
-    ConnectorProfile,
-    ConnectorProfileListRequest,
-    ConnectorProfileUpsertRequest,
-    ConnectorPullRequest,
-    ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
-    ConnectorReplayRequest,
-    ConnectorReplayResult,
-    DomainBootstrapRequest,
-    DomainCapabilitySearchRequest,
-    DomainCapabilitySearchResult,
-    DomainCoverageResponse,
-    DataFlywheelEvent,
-    DataPipelineSupervisionScanRequest,
-    DataPipelineSupervisionScanResult,
-    DataLakeTableSpec,
-    FlinkPipelineSpec,
-    GatewayInvokeRequest,
-    GraphUpsertRequest,
-    HarnessEvaluationRequest,
-    HarnessEvaluationResult,
-    RelayRequest,
-    SkillManifest,
-    SkillPromotionRequest,
-    SubAgentTaskRecord,
-    SubAgentTaskRequest,
-    SubAgentTaskResult,
-    SubAgentTaskStatus,
-    VectorSearchRequest,
-    VectorSearchResult,
-    VectorUpsertRequest,
-)
-
 
 
 def routes(ctx: ControlPlaneContext) -> list:

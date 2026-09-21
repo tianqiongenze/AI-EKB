@@ -11,9 +11,10 @@ from __future__ import annotations
 import threading
 import time
 import uuid
+from collections.abc import Iterable
+from typing import Any
 
 from enterprise_ekb.logging_setup import new_request_id, request_id_var
-from typing import Any, Iterable
 
 # Minimal ASGI typing aliases (avoids a hard dependency on any framework's types).
 ASGIApp = Any

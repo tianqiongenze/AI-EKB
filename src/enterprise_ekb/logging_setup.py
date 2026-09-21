@@ -42,7 +42,7 @@ def configure_logging(log_format: str) -> None:
     """Idempotently attach the JSON formatter for the ekb logger tree."""
     global _CONFIGURED_FORMAT
     normalized = (log_format or "text").lower()
-    if _CONFIGURED_FORMAT == normalized:
+    if normalized == _CONFIGURED_FORMAT:
         return
     logger = logging.getLogger("enterprise_ekb")
     if not logger.handlers:

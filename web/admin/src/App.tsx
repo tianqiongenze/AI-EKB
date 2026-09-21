@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, hasToken, setUnauthorizedHandler, type AuditRecord, type CapacityEstimate } from "./api";
 import { WorkshopScreen } from "./pages/WorkshopScreen";
+import { Documents } from "./pages/Documents";
+import { KnowledgeSearch } from "./pages/KnowledgeSearch";
+import { GraphExplorer } from "./pages/GraphExplorer";
+import { IndustrialDashboard } from "./pages/IndustrialDashboard";
 import { LoginPage } from "./pages/LoginPage";
 import { Card } from "./components/Card";
 import { StatusDot } from "./components/StatusDot";
@@ -15,7 +19,7 @@ import { ToastStack, type ToastItem, type ToastKind } from "./components/Toast";
 import { buttonStyle, toolbarButtonStyle } from "./components/styles";
 import { getLocale, setLocale, t, type Locale, type TranslationKey } from "./i18n";
 
-type Tab = "health" | "capacity" | "skills" | "audit" | "workshop";
+type Tab = "health" | "capacity" | "skills" | "audit" | "workshop" | "documents" | "search" | "graph" | "industrial";
 
 const tabs: { key: Tab; labelKey: TranslationKey }[] = [
   { key: "health", labelKey: "tab.health" },
@@ -23,6 +27,10 @@ const tabs: { key: Tab; labelKey: TranslationKey }[] = [
   { key: "skills", labelKey: "tab.skills" },
   { key: "audit", labelKey: "tab.audit" },
   { key: "workshop", labelKey: "tab.workshop" },
+  { key: "documents", labelKey: "tab.documents" },
+  { key: "search", labelKey: "tab.search" },
+  { key: "graph", labelKey: "tab.graph" },
+  { key: "industrial", labelKey: "tab.industrial" },
 ];
 
 // B-1 审计列：accepted 用 ✓/✗ 着色；列文案走 i18n（每次渲染取当前语言）。
@@ -300,6 +308,10 @@ export default function App() {
         )}
 
         {tab === "workshop" && <WorkshopScreen />}
+        {tab === "documents" && <Documents />}
+        {tab === "search" && <KnowledgeSearch />}
+        {tab === "graph" && <GraphExplorer />}
+        {tab === "industrial" && <IndustrialDashboard />}
 
         {tab === "audit" && (
           <Card title={t("card.audit")}>

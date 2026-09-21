@@ -43,7 +43,7 @@ class _FakePulsarModule:
     def AuthenticationToken(token: str) -> str:
         return token
 
-    def Client(self, *_: Any, **__: Any) -> _FakeClient:  # noqa: N802
+    def Client(self, *_: Any, **__: Any) -> _FakeClient:
         return self.client
 
 

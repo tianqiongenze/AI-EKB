@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-import base64
 from datetime import datetime, timezone
 from typing import Any
 
 from enterprise_ekb.middleware_clients import HttpAdapter, HttpRetryConfig
 from enterprise_ekb.schemas import (
+    ConnectorCheckpointRequest,
+    ConnectorCheckpointResponse,
+    ConnectorCheckpointUpdateRequest,
     ConnectorDirection,
     ConnectorEnvelope,
     ConnectorHealthRequest,
@@ -18,9 +19,6 @@ from enterprise_ekb.schemas import (
     ConnectorPullMode,
     ConnectorPullRequest,
     ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
     ConnectorReplayRequest,
     ConnectorReplayResult,
     ConnectorRunStatus,
@@ -534,7 +532,7 @@ def _build_auth_headers(profile: ConnectorProfile) -> dict[str, str]:
         if username and password:
             import base64
 
-            encoded = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("utf-8")
+            encoded = base64.b64encode(f"{username}:{password}".encode()).decode("utf-8")
             return {"Authorization": f"Basic {encoded}"}
     api_key = profile.auth_config.get("api_key")
     api_key_header = profile.auth_config.get("api_key_header", "X-API-Key")

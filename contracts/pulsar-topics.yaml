@@ -584,6 +584,70 @@ topics:
       retry_max: 10
       dead_letter: true
 
+
+  - event_type: document.ingested
+    topic: persistent://group/control/document-ingested
+    payload_schema:
+      required:
+        - doc_id
+        - source_type
+        - chunk_count
+      properties:
+        doc_id: string
+        tenant_id: string
+        source_name: string
+        source_type: string
+        chunk_count: integer
+        content_sha256: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: document.deleted
+    topic: persistent://group/control/document-deleted
+    payload_schema:
+      required:
+        - doc_id
+      properties:
+        doc_id: string
+        tenant_id: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: graph.rebuilt
+    topic: persistent://group/control/graph-rebuilt
+    payload_schema:
+      required:
+        - nodes
+        - edges
+      properties:
+        nodes: integer
+        edges: integer
+        source: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
+  - event_type: rbac.user.assigned
+    topic: persistent://group/control/rbac-user-assigned
+    payload_schema:
+      required:
+        - user_id
+        - role
+      properties:
+        user_id: string
+        role: string
+        tenant_id: string
+        department: string
+    qos:
+      delivery: at-least-once
+      retry_max: 10
+      dead_letter: true
+
 compatibility:
   strategy: backward-compatible
   notes:

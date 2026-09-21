@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-
+from enterprise_ekb.schemas import HybridRetrievalItem, HybridRetrievalResult
 
 
 class BM25Scorer:
@@ -66,8 +66,6 @@ class BM25Scorer:
         return scores[:top_k]
 
 
-from enterprise_ekb.schemas import HybridRetrievalItem, HybridRetrievalResult
-
 
 def reciprocal_rank_fusion(
     rankings: list[list[str]],
@@ -85,7 +83,7 @@ def reciprocal_rank_fusion(
         raise ValueError("weights must match rankings length")
     effective = weights if weights is not None else [1.0] * len(rankings)
     scores: dict[str, float] = {}
-    for ranking, weight in zip(rankings, effective):
+    for ranking, weight in zip(rankings, effective, strict=False):
         for rank, doc_id in enumerate(ranking, start=1):
             scores[doc_id] = scores.get(doc_id, 0.0) + weight / (k + rank)
     return sorted(scores.items(), key=lambda item: (-item[1], item[0]))

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import importlib
 import json
-import hmac
-import hashlib
+import time
 from dataclasses import dataclass
 from typing import Any
-import time
 
 
 @dataclass(frozen=True)
@@ -63,7 +63,7 @@ class HttpAdapter:
     ) -> dict[str, Any]:
         attempt = 0
         last_exc: Exception | None = None
-        httpx_module = importlib.import_module("httpx")
+        importlib.import_module("httpx")
         while attempt < self._retry.max_attempts:
             attempt += 1
             try:

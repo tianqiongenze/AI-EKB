@@ -10,12 +10,14 @@ outbox-event-driven fan-out).
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from enterprise_ekb.metrics import registry as metrics_registry
 
@@ -80,10 +82,8 @@ class MultiLevelCache:
         ttl = ttl_seconds if ttl_seconds is not None else self.l2_ttl_seconds
         self._l1_put(cache_key, value, min(self.l1_ttl_seconds, ttl))
         if self._redis is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._redis.setex(cache_key, ttl, json.dumps(value, ensure_ascii=False))
-            except Exception:
-                pass
 
     def get_or_load(
         self,

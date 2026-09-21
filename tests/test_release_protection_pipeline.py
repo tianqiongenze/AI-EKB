@@ -1,6 +1,6 @@
-from pathlib import Path
 import json
 import uuid
+from pathlib import Path
 
 from scripts.release_protect_artifacts import run
 
@@ -37,6 +37,6 @@ def test_release_protection_verify_detects_baseline_mismatch(tmp_path: Path, mon
 def test_release_protection_protect_requires_non_default_key() -> None:
     try:
         run(mode="protect", key="yadea-ekb-default-key", obfuscation_level=1)
-        assert False, "expected ValueError for default key"
+        raise AssertionError("expected ValueError for default key")
     except ValueError as exc:
         assert "non-default EKB_RELEASE_PROTECT_KEY" in str(exc)

@@ -41,6 +41,7 @@ def test_harness_rejects_multi_gate_failures() -> None:
 
 def test_harness_endpoint_roundtrip() -> None:
     from litestar.testing import TestClient
+
     from enterprise_ekb.app import create_app
 
     app = create_app(db_path=":memory:")

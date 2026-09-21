@@ -1,6 +1,7 @@
 import os
 
 from litestar.testing import TestClient
+
 from enterprise_ekb.app import create_app
 
 

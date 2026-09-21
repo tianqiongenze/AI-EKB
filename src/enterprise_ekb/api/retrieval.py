@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from litestar import Request, get, post
+from litestar import Request, post
 from litestar.exceptions import HTTPException
 
 from enterprise_ekb.api.context import ControlPlaneContext

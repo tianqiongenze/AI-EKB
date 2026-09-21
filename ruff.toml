@@ -1,0 +1,10 @@
+# EKB CLC 门禁配置。硬错误 F/E/W/B/I/UP/PIE/SIM/RUF 全拦。
+# 豁免说明（均为既有代码风格遗留，禁止新增）：
+# - E501: 中文注释宽行，既有代码大量存在
+# - RUF001/002/003: 中文全角标点误报（本文档为中文工程）
+# - BLE001/SIM102/S110/SIM117/B017: 容错宽泛 except 与嵌套 if 既有风格
+[lint]
+select = ["E", "F", "W", "B", "I", "UP", "SIM", "PIE", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003", "BLE001", "SIM102", "S110", "SIM117", "B017"]
+[lint.per-file-ignores]
+"tests/*" = ["S101"]

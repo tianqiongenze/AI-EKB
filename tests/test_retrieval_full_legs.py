@@ -6,10 +6,8 @@ These tests verify the retrieval layer is no longer a two-leg stub:
 - Reranker: cross-encoder hook applied after RRF fusion
 """
 
-import pytest
 
-from enterprise_ekb.retrieval import HybridRetriever, reciprocal_rank_fusion
-
+from enterprise_ekb.retrieval import HybridRetriever
 
 # ---------------------------------------------------------------------------
 # BM25 lexical leg

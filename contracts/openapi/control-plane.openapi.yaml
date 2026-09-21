@@ -496,6 +496,149 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorPullResult'
+
+  /documents/ingest:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_name, source_type, content_b64]
+              properties:
+                source_name: {type: string}
+                source_type: {type: string}
+                tenant_id: {type: string}
+                content_b64: {type: string}
+                metadata: {type: object}
+      responses:
+        '200': {description: indexed}
+        '400': {description: invalid input}
+        '422': {description: parse failed}
+  /documents:
+    get:
+      parameters:
+        - {name: tenant_id, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer}}
+      responses:
+        '200': {description: list}
+  /documents/{doc_id}:
+    get:
+      parameters:
+        - {name: doc_id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: detail}
+        '404': {description: not found}
+    delete:
+      security:
+        - BearerAuth: []
+      parameters:
+        - {name: doc_id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: deleted}
+        '404': {description: not found}
+  /documents/{doc_id}/chunks:
+    get:
+      parameters:
+        - {name: doc_id, in: path, required: true, schema: {type: string}}
+        - {name: chunk_type, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer}}
+      responses:
+        '200': {description: chunks}
+  /admin/rbac/roles:
+    get:
+      responses:
+        '200': {description: twelve role catalog}
+  /admin/rbac/users:
+    get:
+      security:
+        - BearerAuth: []
+      responses:
+        '200': {description: user bindings}
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, role]
+              properties:
+                user_id: {type: string}
+                role: {type: string}
+                tenant_id: {type: string}
+                department: {type: string}
+      responses:
+        '200': {description: assigned}
+        '400': {description: unknown role}
+  /admin/rbac/users/{user_id}:
+    delete:
+      security:
+        - BearerAuth: []
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: unbound}
+  /industrial/kpis:
+    get:
+      responses:
+        '200': {description: industrial KPI panel}
+  /industrial/timeseries:
+    get:
+      parameters:
+        - {name: metric, in: query, required: true, schema: {type: string}}
+        - {name: hours, in: query, schema: {type: integer}}
+      responses:
+        '200': {description: series}
+  /graph/build:
+    post:
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chunks]
+              properties:
+                chunks: {type: array}
+                source: {type: string}
+      responses:
+        '200': {description: rebuilt counts}
+  /graph/search:
+    get:
+      parameters:
+        - {name: keyword, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {description: matches}
+  /graph/neighbors:
+    get:
+      parameters:
+        - {name: entity, in: query, required: true, schema: {type: string}}
+        - {name: hops, in: query, schema: {type: integer}}
+      responses:
+        '200': {description: subgraph}
+  /graph/stats:
+    get:
+      responses:
+        '200': {description: counts}
+  /llm-cache/stats:
+    get:
+      responses:
+        '200': {description: cache stats with hit metadata}
+  /llm-cache/clear:
+    post:
+      security:
+        - BearerAuth: []
+      responses:
+        '200': {description: cleared}
+
 components:
   securitySchemes:
     BearerAuth:

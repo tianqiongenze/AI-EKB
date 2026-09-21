@@ -6,14 +6,15 @@ import threading
 from pathlib import Path
 from typing import Any
 
+from enterprise_ekb.migrator import TiDBMigrator
 from enterprise_ekb.schemas import (
     BusinessCapabilityManifest,
     BusinessDomain,
     CapabilityMaturity,
     ConnectorAdapterType,
     ConnectorAuthType,
-    ConnectorEnvelope,
     ConnectorDirection,
+    ConnectorEnvelope,
     ConnectorProfile,
     ConnectorProfileStatus,
     ConnectorRunStatus,
@@ -23,8 +24,7 @@ from enterprise_ekb.schemas import (
     SubAgentTaskRecord,
     SubAgentTaskStatus,
 )
-from enterprise_ekb.migrator import TiDBMigrator
-from enterprise_ekb.storage import SQLiteControlPlaneStore, SkillRow
+from enterprise_ekb.storage import SkillRow, SQLiteControlPlaneStore
 
 try:
     import pymysql
@@ -72,16 +72,16 @@ class TiDBControlPlaneStore(SQLiteControlPlaneStore):
     ) -> None:
         if pymysql is None:
             raise RuntimeError("pymysql is required for TiDB mode")
-        connect_kwargs: dict[str, Any] = dict(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
-            autocommit=False,
-            charset="utf8mb4",
-            cursorclass=pymysql.cursors.DictCursor,
-        )
+        connect_kwargs: dict[str, Any] = {
+            "host": host,
+            "port": port,
+            "user": user,
+            "password": password,
+            "database": database,
+            "autocommit": False,
+            "charset": "utf8mb4",
+            "cursorclass": pymysql.cursors.DictCursor,
+        }
         self._conn = _ThreadLocalPyMySQLConnection(connect_kwargs)
         self._instance_id = os.getenv(
             "EKB_RELAY_INSTANCE_ID",

@@ -15,8 +15,9 @@ import asyncio
 import json
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Any, AsyncIterator
+from typing import Any
 
 from enterprise_ekb.metrics import registry as metrics_registry
 from enterprise_ekb.policy import PolicyEngine

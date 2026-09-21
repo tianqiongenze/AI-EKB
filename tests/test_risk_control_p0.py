@@ -1,6 +1,5 @@
 import hashlib
 import hmac
-import os
 import time
 from pathlib import Path
 
@@ -119,7 +118,7 @@ def test_anti_replay_enforces_signature_and_nonce(monkeypatch: pytest.MonkeyPatc
     assert bad_sig.status_code == 401
     assert bad_sig.json()["detail"] == "signature_invalid"
 
-    fresh = str(int(time.time()))
+    str(int(time.time()))
     good_headers = signed_headers("POST", path, "n-good")
     first = client.post(path, content=BODY, headers=good_headers)
     assert first.status_code != 401

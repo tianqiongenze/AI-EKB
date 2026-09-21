@@ -1,5 +1,6 @@
-from enterprise_ekb.app import create_app
 from litestar.testing import TestClient
+
+from enterprise_ekb.app import create_app
 
 
 def test_a2a_publish_enqueues_message() -> None:

@@ -1,62 +1,22 @@
 from __future__ import annotations
 
-import os
-import time
-import uuid
-from typing import Any, cast
-
-from litestar import Request, Response, get, post
+from litestar import Request, post
 from litestar.exceptions import HTTPException
 
 from enterprise_ekb.api.context import ControlPlaneContext
 from enterprise_ekb.schemas import (
-    A2APriority,
     A2ASupervisionAlert,
-    A2ASupervisionScanRequest,
-    A2ASupervisionScanResult,
-    A2AEnvelope,
-    AuditQuery,
-    BusinessCapabilityManifest,
-    CapacityEstimateRequest,
-    CapacityEstimateResult,
-    ConnectorEnvelope,
-    ConnectorHealthRequest,
-    ConnectorHealthResult,
-    ConnectorProfile,
-    ConnectorProfileListRequest,
-    ConnectorProfileUpsertRequest,
-    ConnectorPullRequest,
-    ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
-    ConnectorReplayRequest,
-    ConnectorReplayResult,
-    DomainBootstrapRequest,
-    DomainCapabilitySearchRequest,
-    DomainCapabilitySearchResult,
-    DomainCoverageResponse,
     DataFlywheelEvent,
+    DataLakeTableSpec,
     DataPipelineSupervisionScanRequest,
     DataPipelineSupervisionScanResult,
-    DataLakeTableSpec,
     FlinkPipelineSpec,
-    GatewayInvokeRequest,
     GraphUpsertRequest,
-    HarnessEvaluationRequest,
-    HarnessEvaluationResult,
     RelayRequest,
-    SkillManifest,
-    SkillPromotionRequest,
-    SubAgentTaskRecord,
-    SubAgentTaskRequest,
-    SubAgentTaskResult,
-    SubAgentTaskStatus,
     VectorSearchRequest,
     VectorSearchResult,
     VectorUpsertRequest,
 )
-
 
 
 def routes(ctx: ControlPlaneContext) -> list:
@@ -313,6 +273,6 @@ def routes(ctx: ControlPlaneContext) -> list:
         if ctx.milvus_client is None:
             raise HTTPException(status_code=503, detail="milvus_unavailable")
         cache_key = ctx.cache.key("vector:search", data.collection_name, data.vectors, data.limit)
-        hit, cached = ctx.cache.get_or_load(cache_key, lambda: ctx.milvus_client.search(data.collection_name, data.vectors, data.limit))
+        _hit, cached = ctx.cache.get_or_load(cache_key, lambda: ctx.milvus_client.search(data.collection_name, data.vectors, data.limit))
         return VectorSearchResult(results=cached)
     return [register_datalake_table, register_flink_pipeline, publish_flywheel_event, relay_events, datapipeline_supervision_scan, graph_upsert, vector_upsert, vector_search]

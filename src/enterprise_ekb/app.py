@@ -8,21 +8,27 @@ composes them.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
 from litestar import Litestar, Request, Response
 from litestar.exceptions import ValidationException
-from litestar.status_codes import HTTP_422_UNPROCESSABLE_ENTITY
 from litestar.middleware.base import DefineMiddleware
+from litestar.status_codes import HTTP_422_UNPROCESSABLE_ENTITY
 
 from enterprise_ekb.api import (
     a2a,
+    admin,
     connectors,
     dataops,
+    documents,
     domain,
     governance,
+    graph,
     health,
+    industrial,
+    llm_cache,
     mcp,
     observability,
     retrieval,
@@ -32,12 +38,31 @@ from enterprise_ekb.api import (
 from enterprise_ekb.api.context import build_context
 from enterprise_ekb.config import load_config
 from enterprise_ekb.logging_setup import configure_logging
-from enterprise_ekb.metrics import HTTPMetricsMiddleware, registry as metrics_registry
+from enterprise_ekb.metrics import HTTPMetricsMiddleware
+from enterprise_ekb.metrics import registry as metrics_registry
 from enterprise_ekb.risk_control import AntiReplayMiddleware
 
 _logger = logging.getLogger("enterprise_ekb.app")
 
-ROUTE_MODULES = (health, observability, retrieval, skills, mcp, governance, a2a, subagent, dataops, domain, connectors)
+ROUTE_MODULES = (
+    health,
+    observability,
+    retrieval,
+    skills,
+    mcp,
+    governance,
+    a2a,
+    subagent,
+    dataops,
+    domain,
+    connectors,
+    # P0-② 文档流水线 / P0-④ RBAC / P1-⑤⑥⑦ 看板·图谱·语义缓存
+    documents,
+    admin,
+    industrial,
+    graph,
+    llm_cache,
+)
 
 
 def create_app(db_path: str | None = None) -> Litestar:
@@ -83,10 +108,8 @@ def create_app(db_path: str | None = None) -> Litestar:
         finally:
             if task is not None:
                 task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
-                except (asyncio.CancelledError, Exception):
-                    pass
 
     def _validation_exception_to_422(request: Request, exc: ValidationException) -> Response:
         return Response(content={"detail": exc.detail}, status_code=HTTP_422_UNPROCESSABLE_ENTITY)

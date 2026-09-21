@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 from litestar import Request
 from litestar.exceptions import HTTPException
 
+from enterprise_ekb.a2a_runtime import A2AConsumerConfig, build_a2a_consumer
 from enterprise_ekb.cache import MultiLevelCache
 from enterprise_ekb.config import AppConfig
 from enterprise_ekb.connectors import ConnectorRuntime
@@ -28,20 +29,24 @@ from enterprise_ekb.domain_capability import DomainCapabilityService
 from enterprise_ekb.event_bus import InMemoryPublisher, OutboxRelay, PulsarPublisher
 from enterprise_ekb.harness import HarnessGate
 from enterprise_ekb.mcp_gateway import MCPGateway
-from enterprise_ekb.policy import PolicyEngine
-from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
-from enterprise_ekb.risk_control import DistributedRateLimiter
-from enterprise_ekb.skill_registry import SkillRegistry
-from enterprise_ekb.storage import ReplicaRoutingStore, SQLiteControlPlaneStore
-from enterprise_ekb.tidb_store import TiDBControlPlaneStore
 from enterprise_ekb.middleware_clients import (
     HighPerformanceMilvusClient,
     HighPerformanceNeo4jClient,
+    HighPerformanceRedisClient,
     MilvusConfig,
     Neo4jConfig,
+    RedisConfig,
 )
-from enterprise_ekb.a2a_runtime import A2AConsumerConfig, build_a2a_consumer
-from enterprise_ekb.risk_control import NonceStore, verify_bearer_credential
+from enterprise_ekb.policy import PolicyEngine
+from enterprise_ekb.rate_limiter import TenantRegionRateLimiter, TokenBucketRateLimiter
+from enterprise_ekb.risk_control import (
+    DistributedRateLimiter,
+    NonceStore,
+    verify_bearer_credential,
+)
+from enterprise_ekb.skill_registry import SkillRegistry
+from enterprise_ekb.storage import ReplicaRoutingStore, SQLiteControlPlaneStore
+from enterprise_ekb.tidb_store import TiDBControlPlaneStore
 
 _logger = logging.getLogger("enterprise_ekb.app")
 
@@ -153,7 +158,6 @@ class ControlPlaneContext:
             self.config.jwt_expected_audience,
         )
 
-    auth_disabled_warning_emitted = False
 
 
     def _audit_connector_auth_failure(self, request: Request, detail: str) -> None:

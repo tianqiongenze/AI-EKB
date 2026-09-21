@@ -1,10 +1,10 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
 from litestar.testing import TestClient
 
-from enterprise_ekb.app import create_app
 from enterprise_ekb import connectors as connectors_module
+from enterprise_ekb.app import create_app
 
 
 def _profile(system: str, name: str) -> dict[str, object]:

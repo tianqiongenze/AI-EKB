@@ -1,62 +1,14 @@
 from __future__ import annotations
 
-import os
-import time
-import uuid
-from typing import Any, cast
+import json
 
-from litestar import Request, Response, get, post
+from litestar import Request, Response, post
 from litestar.exceptions import HTTPException
 
 from enterprise_ekb.api.context import ControlPlaneContext
 from enterprise_ekb.schemas import (
-    A2APriority,
-    A2ASupervisionAlert,
-    A2ASupervisionScanRequest,
-    A2ASupervisionScanResult,
-    A2AEnvelope,
-    AuditQuery,
-    BusinessCapabilityManifest,
-    CapacityEstimateRequest,
-    CapacityEstimateResult,
-    ConnectorEnvelope,
-    ConnectorHealthRequest,
-    ConnectorHealthResult,
-    ConnectorProfile,
-    ConnectorProfileListRequest,
-    ConnectorProfileUpsertRequest,
-    ConnectorPullRequest,
-    ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
-    ConnectorReplayRequest,
-    ConnectorReplayResult,
-    DomainBootstrapRequest,
-    DomainCapabilitySearchRequest,
-    DomainCapabilitySearchResult,
-    DomainCoverageResponse,
-    DataFlywheelEvent,
-    DataPipelineSupervisionScanRequest,
-    DataPipelineSupervisionScanResult,
-    DataLakeTableSpec,
-    FlinkPipelineSpec,
     GatewayInvokeRequest,
-    GraphUpsertRequest,
-    HarnessEvaluationRequest,
-    HarnessEvaluationResult,
-    RelayRequest,
-    SkillManifest,
-    SkillPromotionRequest,
-    SubAgentTaskRecord,
-    SubAgentTaskRequest,
-    SubAgentTaskResult,
-    SubAgentTaskStatus,
-    VectorSearchRequest,
-    VectorSearchResult,
-    VectorUpsertRequest,
 )
-
 
 
 def routes(ctx: ControlPlaneContext) -> list:
@@ -82,6 +34,21 @@ def routes(ctx: ControlPlaneContext) -> list:
                 limit=tenant_region_override or ctx.config.mcp_rate_limit_per_minute,
             ):
                 raise HTTPException(status_code=429, detail="tenant_region_rate_limited")
+        # LCO 三层语义缓存：命中直接返回（cache_hit/cache_layer 元数据透传，OSW 铁律）
+        from enterprise_ekb.api.llm_cache import _SEMANTIC_CACHE
+
+        cache_system_key = f"mcp:{data.skill_name}:{data.skill_version}:{data.tool_name}"
+        cache_user_key = json.dumps(data.payload, ensure_ascii=False, sort_keys=True, default=str)
+        cached = _SEMANTIC_CACHE.get(cache_system_key, cache_user_key)
+        if cached is not None:
+            answer, layer = cached
+            return {
+                "accepted": True,
+                "reason": "semantic_cache_hit",
+                "data": answer,
+                "cache_hit": True,
+                "cache_layer": layer,
+            }
         response = ctx._run_with_retry(
             lambda: ctx.mcp_gateway.invoke(data),
             attempts=ctx.config.mcp_invoke_retry_attempts,
@@ -113,10 +80,14 @@ def routes(ctx: ControlPlaneContext) -> list:
         )
         if not response.accepted:
             raise HTTPException(status_code=403, detail=response.decision_reason)
+        # 未命中→回填缓存（仅接受的成功响应）
+        _SEMANTIC_CACHE.put(cache_system_key, cache_user_key, response.data)
         return {
             "accepted": response.accepted,
             "reason": response.decision_reason,
             "data": response.data,
+            "cache_hit": False,
+            "cache_layer": 0,
         }
 
 

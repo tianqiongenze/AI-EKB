@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-import time
 import logging
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
-
-from enterprise_ekb.middleware_clients import HighPerformancePulsarClient, PulsarConfig
-
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

@@ -1,69 +1,23 @@
 from __future__ import annotations
 
 import asyncio
-import os
-import time
-import uuid
-from typing import Any, cast
 
-from litestar import Request, Response, get, post
-from litestar.exceptions import HTTPException
+from litestar import get, post
 
 from enterprise_ekb.api.context import ControlPlaneContext
 from enterprise_ekb.async_facade import AsyncControlPlaneFacade
 from enterprise_ekb.domain_capability import default_domain_bootstrap
 from enterprise_ekb.schemas import (
-    A2APriority,
-    A2ASupervisionAlert,
-    A2ASupervisionScanRequest,
-    A2ASupervisionScanResult,
-    A2AEnvelope,
-    AuditQuery,
     BusinessCapabilityManifest,
-    CapacityEstimateRequest,
-    CapacityEstimateResult,
-    ConnectorEnvelope,
-    ConnectorHealthRequest,
-    ConnectorHealthResult,
-    ConnectorProfile,
-    ConnectorProfileListRequest,
-    ConnectorProfileUpsertRequest,
-    ConnectorPullRequest,
-    ConnectorPullResult,
-    ConnectorCheckpointRequest,
-    ConnectorCheckpointResponse,
-    ConnectorCheckpointUpdateRequest,
-    ConnectorReplayRequest,
-    ConnectorReplayResult,
     DomainBootstrapRequest,
     DomainCapabilitySearchRequest,
     DomainCapabilitySearchResult,
     DomainCoverageResponse,
-    DataFlywheelEvent,
-    DataPipelineSupervisionScanRequest,
-    DataPipelineSupervisionScanResult,
-    DataLakeTableSpec,
-    FlinkPipelineSpec,
-    GatewayInvokeRequest,
-    GraphUpsertRequest,
-    HarnessEvaluationRequest,
-    HarnessEvaluationResult,
-    RelayRequest,
-    SkillManifest,
-    SkillPromotionRequest,
-    SubAgentTaskRecord,
-    SubAgentTaskRequest,
-    SubAgentTaskResult,
-    SubAgentTaskStatus,
-    VectorSearchRequest,
-    VectorSearchResult,
-    VectorUpsertRequest,
 )
 
 
-
 def routes(ctx: ControlPlaneContext) -> list:
-    astore = AsyncControlPlaneFacade(ctx.store)
+    AsyncControlPlaneFacade(ctx.store)
     @post("/domain/capabilities/upsert", status_code=200, sync_to_thread=True)
     def upsert_domain_capability(data: BusinessCapabilityManifest) -> dict[str, object]:
         capability_id = ctx.domain_capability_service.upsert(data)

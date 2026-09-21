@@ -1,11 +1,9 @@
 from pathlib import Path
 
-import pytest
 from litestar.testing import TestClient
 
-from enterprise_ekb.cache import MultiLevelCache
-from enterprise_ekb.metrics import registry as metrics_registry
 from enterprise_ekb.app import create_app
+from enterprise_ekb.cache import MultiLevelCache
 
 
 def test_l1_hit_miss_and_metrics() -> None:

@@ -5,9 +5,10 @@ import os
 import sqlite3
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from enterprise_ekb.schemas import (
     BusinessCapabilityManifest,
@@ -15,8 +16,8 @@ from enterprise_ekb.schemas import (
     CapabilityMaturity,
     ConnectorAdapterType,
     ConnectorAuthType,
-    ConnectorEnvelope,
     ConnectorDirection,
+    ConnectorEnvelope,
     ConnectorProfile,
     ConnectorProfileStatus,
     ConnectorRunStatus,
@@ -41,6 +42,17 @@ class OutboxEvent:
 
 
 _T = TypeVar("_T")
+
+
+def _json_loads_or_empty(raw: Any) -> dict:
+    """容错 JSON 解析：坏数据返回空 dict，不阻断读路径。"""
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except (TypeError, ValueError):
+        return {}
 
 
 class _ThreadLocalSQLiteConnection:
@@ -279,6 +291,52 @@ class SQLiteControlPlaneStore:
               ON sub_agent_tasks(supervisor_id, created_at);
             CREATE INDEX IF NOT EXISTS idx_sub_agent_tasks_status
               ON sub_agent_tasks(status, updated_at);
+
+            CREATE TABLE IF NOT EXISTS documents (
+                doc_id TEXT NOT NULL PRIMARY KEY,
+                tenant_id TEXT NOT NULL,
+                source_name TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                mime_type TEXT NOT NULL,
+                content_sha256 TEXT NOT NULL,
+                status TEXT NOT NULL,
+                page_count INTEGER NOT NULL DEFAULT 0,
+                chunk_count INTEGER NOT NULL DEFAULT 0,
+                error TEXT NOT NULL DEFAULT '',
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_documents_tenant_created
+              ON documents(tenant_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS document_chunks (
+                chunk_id TEXT NOT NULL,
+                doc_id TEXT NOT NULL,
+                seq INTEGER NOT NULL,
+                chunk_type TEXT NOT NULL,
+                parent_id TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL,
+                tokens INTEGER NOT NULL DEFAULT 0,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                PRIMARY KEY (doc_id, chunk_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_document_chunks_doc_seq
+              ON document_chunks(doc_id, seq);
+            CREATE INDEX IF NOT EXISTS idx_document_chunks_type
+              ON document_chunks(chunk_type);
+
+            CREATE TABLE IF NOT EXISTS rbac_users (
+                user_id TEXT NOT NULL PRIMARY KEY,
+                role TEXT NOT NULL,
+                tenant_id TEXT NOT NULL DEFAULT 'group',
+                department TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+            );
             """
         )
         self._ensure_outbox_migration_columns()
@@ -391,6 +449,219 @@ class SQLiteControlPlaneStore:
         self._run_write(_operation)
         if rowcount == 0:
             raise KeyError("skill not found")
+
+    # ------------------------------------------------------------------
+    # P0-② 文档流水线存储 + P0-④ RBAC 用户绑定
+    # ------------------------------------------------------------------
+    def upsert_document(self, doc: dict) -> None:
+        if doc is None:
+            raise ValueError("doc_required")
+
+        def _operation() -> None:
+            self._conn.execute(
+                """
+                INSERT INTO documents (
+                    doc_id, tenant_id, source_name, source_type, mime_type,
+                    content_sha256, status, page_count, chunk_count, error,
+                    metadata_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(doc_id) DO UPDATE SET
+                    status = excluded.status,
+                    page_count = excluded.page_count,
+                    chunk_count = excluded.chunk_count,
+                    error = excluded.error,
+                    metadata_json = excluded.metadata_json,
+                    updated_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                """,
+                (
+                    doc.get("doc_id", ""),
+                    doc.get("tenant_id", "group"),
+                    doc.get("source_name", ""),
+                    doc.get("source_type", ""),
+                    doc.get("mime_type", ""),
+                    doc.get("content_sha256", ""),
+                    doc.get("status", "parsed"),
+                    int(doc.get("page_count", 0) or 0),
+                    int(doc.get("chunk_count", 0) or 0),
+                    str(doc.get("error", "") or ""),
+                    json.dumps(doc.get("metadata", {}), ensure_ascii=False),
+                ),
+            )
+
+        self._run_write(_operation)
+
+    def get_document(self, doc_id: str) -> dict | None:
+        if not doc_id:
+            return None
+        row = self._conn.execute(
+            "SELECT * FROM documents WHERE doc_id = ?", (doc_id,)
+        ).fetchone()
+        return self._document_row_to_dict(row) if row is not None else None
+
+    def list_documents(self, tenant_id: str | None = None, limit: int = 50) -> list[dict]:
+        effective_limit = max(1, min(int(limit or 50), 200))
+        if tenant_id:
+            rows = self._conn.execute(
+                "SELECT * FROM documents WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?",
+                (tenant_id, effective_limit),
+            ).fetchall()
+        else:
+            rows = self._conn.execute(
+                "SELECT * FROM documents ORDER BY created_at DESC LIMIT ?",
+                (effective_limit,),
+            ).fetchall()
+        return [self._document_row_to_dict(row) for row in rows]
+
+    def replace_document_chunks(self, doc_id: str, chunks: list[dict]) -> None:
+        if not doc_id:
+            raise ValueError("doc_id_required")
+        if chunks is None:
+            chunks = []
+
+        def _operation() -> None:
+            self._conn.execute("DELETE FROM document_chunks WHERE doc_id = ?", (doc_id,))
+            for chunk in chunks:
+                self._conn.execute(
+                    """
+                    INSERT INTO document_chunks (
+                        chunk_id, doc_id, seq, chunk_type, parent_id,
+                        content, tokens, metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        chunk.get("chunk_id", ""),
+                        doc_id,
+                        int(chunk.get("seq", 0) or 0),
+                        chunk.get("chunk_type", "text"),
+                        chunk.get("parent_id", "") or "",
+                        chunk.get("content", ""),
+                        int(chunk.get("tokens", 0) or 0),
+                        chunk.get("metadata_json", "{}") or "{}",
+                    ),
+                )
+
+        self._run_write(_operation)
+
+    def list_document_chunks(
+        self, doc_id: str, chunk_type: str | None = None, limit: int = 200
+    ) -> list[dict]:
+        if not doc_id:
+            return []
+        effective_limit = max(1, min(int(limit or 200), 1000))
+        if chunk_type:
+            rows = self._conn.execute(
+                """
+                SELECT chunk_id, doc_id, seq, chunk_type, parent_id, content, tokens, metadata_json
+                FROM document_chunks
+                WHERE doc_id = ? AND chunk_type = ?
+                ORDER BY seq LIMIT ?
+                """,
+                (doc_id, chunk_type, effective_limit),
+            ).fetchall()
+        else:
+            rows = self._conn.execute(
+                """
+                SELECT chunk_id, doc_id, seq, chunk_type, parent_id, content, tokens, metadata_json
+                FROM document_chunks
+                WHERE doc_id = ?
+                ORDER BY seq LIMIT ?
+                """,
+                (doc_id, effective_limit),
+            ).fetchall()
+        result: list[dict] = []
+        for row in rows or []:
+            result.append(
+                {
+                    "chunk_id": row[0],
+                    "doc_id": row[1],
+                    "seq": row[2],
+                    "chunk_type": row[3],
+                    "parent_id": row[4],
+                    "content": row[5],
+                    "tokens": row[6],
+                    "metadata": _json_loads_or_empty(row[7]),
+                }
+            )
+        return result
+
+    @staticmethod
+    def _document_row_to_dict(row: Any) -> dict:
+        columns = [
+            "doc_id",
+            "tenant_id",
+            "source_name",
+            "source_type",
+            "mime_type",
+            "content_sha256",
+            "status",
+            "page_count",
+            "chunk_count",
+            "error",
+            "metadata_json",
+            "created_at",
+            "updated_at",
+        ]
+        doc = {key: row[index] for index, key in enumerate(columns)}
+        doc["metadata"] = _json_loads_or_empty(doc.pop("metadata_json", "{}"))
+        return doc
+
+    def upsert_user(
+        self, user_id: str, role: str, tenant_id: str = "group", department: str = ""
+    ) -> None:
+        if not user_id or not role:
+            raise ValueError("user_id_and_role_required")
+
+        def _operation() -> None:
+            self._conn.execute(
+                """
+                INSERT INTO rbac_users (user_id, role, tenant_id, department)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    role = excluded.role,
+                    tenant_id = excluded.tenant_id,
+                    department = excluded.department,
+                    updated_at = (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                """,
+                (user_id, role, tenant_id or "group", department or ""),
+            )
+
+        self._run_write(_operation)
+
+    def get_user_role(self, user_id: str) -> str | None:
+        if not user_id:
+            return None
+        row = self._conn.execute(
+            "SELECT role FROM rbac_users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        return row[0] if row is not None else None
+
+    def list_users(self) -> list[dict]:
+        rows = self._conn.execute(
+            """
+            SELECT user_id, role, tenant_id, department, created_at, updated_at
+            FROM rbac_users ORDER BY user_id
+            """
+        ).fetchall()
+        return [
+            {
+                "user_id": row[0],
+                "role": row[1],
+                "tenant_id": row[2],
+                "department": row[3],
+                "created_at": row[4],
+                "updated_at": row[5],
+            }
+            for row in rows or []
+        ]
+
+    def delete_user(self, user_id: str) -> None:
+        if not user_id:
+            raise ValueError("user_id_required")
+
+        def _operation() -> None:
+            self._conn.execute("DELETE FROM rbac_users WHERE user_id = ?", (user_id,))
+
+        self._run_write(_operation)
 
     def append_audit(
         self,

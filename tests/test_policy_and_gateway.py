@@ -1,6 +1,11 @@
 from enterprise_ekb.mcp_gateway import MCPGateway
 from enterprise_ekb.policy import PolicyEngine
-from enterprise_ekb.schemas import GatewayInvokeRequest, SkillManifest, SkillRiskLevel, SkillStage
+from enterprise_ekb.schemas import (
+    GatewayInvokeRequest,
+    SkillManifest,
+    SkillRiskLevel,
+    SkillStage,
+)
 from enterprise_ekb.skill_registry import SkillRegistry
 
 

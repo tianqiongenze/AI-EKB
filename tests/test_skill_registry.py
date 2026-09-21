@@ -46,6 +46,6 @@ def test_high_risk_requires_security_approved_tag() -> None:
 
     try:
         registry.promote("global-risk-agent", "2.1.0", SkillStage.production)
-        assert False
+        raise AssertionError("promotion should be rejected")
     except ValueError as exc:
         assert "security-approved" in str(exc)

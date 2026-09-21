@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -49,10 +50,9 @@ def test_weighted_rrf_lets_stronger_leg_dominate() -> None:
 
 
 def test_async_facade_and_hot_handlers_are_native_async() -> None:
-    import inspect
 
-    from enterprise_ekb.api.context import build_context
     from enterprise_ekb.api import domain as domain_module
+    from enterprise_ekb.api.context import build_context
     from enterprise_ekb.async_facade import AsyncControlPlaneFacade
 
     ctx = build_context(__import__("enterprise_ekb.config", fromlist=["load_config"]).load_config(), ":memory:")
@@ -68,4 +68,3 @@ def test_async_facade_and_hot_handlers_are_native_async() -> None:
     assert asyncio.run(_probe())["pending"] >= 0
 
 
-import asyncio  # noqa: E402
