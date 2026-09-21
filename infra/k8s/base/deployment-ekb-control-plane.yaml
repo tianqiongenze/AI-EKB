@@ -28,12 +28,16 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 5      # 0.7.1：1s 在压测/高峰负载下误杀 pod（kubelet 判超时→重启循环）
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
           resources:
             requests:
               cpu: "500m"

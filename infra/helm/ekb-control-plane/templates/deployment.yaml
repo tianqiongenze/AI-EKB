@@ -112,9 +112,13 @@ spec:
             httpGet:
               path: /readyz
               port: 8080
+            timeoutSeconds: 5      # 0.7.1：负载下 1s 超时会误杀 pod
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
+            timeoutSeconds: 5
+            failureThreshold: 6
           resources:
 {{ toYaml .Values.resources | indent 12 }}
