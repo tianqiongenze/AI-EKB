@@ -1,0 +1,139 @@
+{
+  "generated_at": "2026-09-21T07:37:14.751001+00:00",
+  "target": "http://127.0.0.1:8080",
+  "samples_per_run": 200,
+  "results": [
+    {
+      "scenario": "S1_list",
+      "concurrency": 1,
+      "rest": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 25.8,
+        "p95_ms": 42.5,
+        "p99_ms": 50.0,
+        "mean_ms": 25.1,
+        "rps": 39.8
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 26.0,
+        "p95_ms": 57.0,
+        "p99_ms": 73.6,
+        "mean_ms": 28.1,
+        "rps": 35.6
+      }
+    },
+    {
+      "scenario": "S2_detail_children",
+      "concurrency": 1,
+      "rest": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 79.1,
+        "p95_ms": 120.2,
+        "p99_ms": 142.4,
+        "mean_ms": 81.7,
+        "rps": 12.2
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 48.8,
+        "p95_ms": 87.7,
+        "p99_ms": 126.7,
+        "mean_ms": 46.8,
+        "rps": 21.4
+      }
+    },
+    {
+      "scenario": "S3_aggregate_panel",
+      "concurrency": 1,
+      "rest": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 537.7,
+        "p95_ms": 791.9,
+        "p99_ms": 964.0,
+        "mean_ms": 559.3,
+        "rps": 1.8
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 392.5,
+        "p95_ms": 547.2,
+        "p99_ms": 725.7,
+        "mean_ms": 421.7,
+        "rps": 2.4
+      }
+    },
+    {
+      "scenario": "S1_list",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 45,
+        "p50_ms": 6.9,
+        "p95_ms": 66.5,
+        "p99_ms": 68.3,
+        "mean_ms": 14.6,
+        "rps": 68.4
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 32.4,
+        "p95_ms": 62.1,
+        "p99_ms": 83.8,
+        "mean_ms": 35.2,
+        "rps": 28.4
+      }
+    },
+    {
+      "scenario": "S2_detail_children",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 141,
+        "p50_ms": 15.0,
+        "p95_ms": 76.1,
+        "p99_ms": 79.4,
+        "mean_ms": 27.5,
+        "rps": 36.4
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 48.6,
+        "p95_ms": 65.8,
+        "p99_ms": 81.2,
+        "mean_ms": 50.4,
+        "rps": 19.8
+      }
+    },
+    {
+      "scenario": "S3_aggregate_panel",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 28,
+        "p50_ms": 3115.3,
+        "p95_ms": 3773.0,
+        "p99_ms": 4110.2,
+        "mean_ms": 2764.1,
+        "rps": 0.4
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 3241.1,
+        "p95_ms": 3373.0,
+        "p99_ms": 3410.6,
+        "mean_ms": 3197.0,
+        "rps": 0.3
+      }
+    }
+  ]
+}
