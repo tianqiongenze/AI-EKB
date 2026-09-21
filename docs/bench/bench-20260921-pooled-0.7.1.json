@@ -1,2 +1,140 @@
-cat: /tmp/bench_pooled.json: No such file or directory
-command terminated with exit code 1
+{
+  "generated_at": "2026-09-21T11:19:15.767426+00:00",
+  "target": "http://127.0.0.1:8080",
+  "samples_per_run": 200,
+  "pooled_client": true,
+  "results": [
+    {
+      "scenario": "S1_list",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 58,
+        "p50_ms": 6.5,
+        "p95_ms": 58.0,
+        "p99_ms": 60.5,
+        "mean_ms": 12.5,
+        "rps": 80.0
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 31.0,
+        "p95_ms": 71.7,
+        "p99_ms": 85.9,
+        "mean_ms": 34.5,
+        "rps": 29.0
+      }
+    },
+    {
+      "scenario": "S2_detail_children",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 112,
+        "p50_ms": 14.2,
+        "p95_ms": 67.5,
+        "p99_ms": 72.5,
+        "mean_ms": 24.2,
+        "rps": 41.3
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 48.6,
+        "p95_ms": 57.8,
+        "p99_ms": 61.0,
+        "mean_ms": 48.4,
+        "rps": 20.6
+      }
+    },
+    {
+      "scenario": "S3_aggregate_panel",
+      "concurrency": 8,
+      "rest": {
+        "n": 200,
+        "errors": 14,
+        "p50_ms": 3214.5,
+        "p95_ms": 3880.8,
+        "p99_ms": 4266.9,
+        "mean_ms": 3057.3,
+        "rps": 0.3
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 3172.3,
+        "p95_ms": 3336.0,
+        "p99_ms": 3406.5,
+        "mean_ms": 3136.1,
+        "rps": 0.3
+      }
+    },
+    {
+      "scenario": "S1_list",
+      "concurrency": 32,
+      "rest": {
+        "n": 200,
+        "errors": 136,
+        "p50_ms": 21.8,
+        "p95_ms": 88.3,
+        "p99_ms": 94.8,
+        "mean_ms": 42.7,
+        "rps": 23.4
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 141.6,
+        "p95_ms": 207.9,
+        "p99_ms": 209.5,
+        "mean_ms": 149.1,
+        "rps": 6.7
+      }
+    },
+    {
+      "scenario": "S2_detail_children",
+      "concurrency": 32,
+      "rest": {
+        "n": 200,
+        "errors": 193,
+        "p50_ms": 67.7,
+        "p95_ms": 94.6,
+        "p99_ms": 105.2,
+        "mean_ms": 55.1,
+        "rps": 18.2
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 188.8,
+        "p95_ms": 203.0,
+        "p99_ms": 214.1,
+        "mean_ms": 180.0,
+        "rps": 5.6
+      }
+    },
+    {
+      "scenario": "S3_aggregate_panel",
+      "concurrency": 32,
+      "rest": {
+        "n": 200,
+        "errors": 187,
+        "p50_ms": 768.4,
+        "p95_ms": 2914.7,
+        "p99_ms": 4521.7,
+        "mean_ms": 922.0,
+        "rps": 1.1
+      },
+      "graphql": {
+        "n": 200,
+        "errors": 0,
+        "p50_ms": 12949.3,
+        "p95_ms": 13487.8,
+        "p99_ms": 13552.7,
+        "mean_ms": 11968.5,
+        "rps": 0.1
+      }
+    }
+  ]
+}
