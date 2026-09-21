@@ -34,9 +34,9 @@ EXPECTED_ROLES = {
     "C1": ("P4", True),
     "C2": ("P4", True),
     "C3": ("P4", True),
-    "D1": ("", False),
-    "D2": ("", False),
-    "D3": ("", False),
+    "D1": ("P3", False),
+    "D2": ("P2", False),
+    "D3": ("P4", False),
 }
 
 

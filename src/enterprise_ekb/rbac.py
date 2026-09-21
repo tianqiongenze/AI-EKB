@@ -143,22 +143,22 @@ ROLE_DEFINITIONS: dict[str, dict[str, Any]] = {
     RoleCode.AI_AGENT: {
         "code": "D1",
         "name": "AI Agent",
-        "layer": NO_LAYER,
-        "description": "AI Agent — non-human principal; no standing permission layer, access via scoped grants.",
+        "layer": LAYER_DATA,
+        "description": "AI Agent — non-human principal at data level (P3): retrieval/summarize/ingest within scoped grants.",
         "human": False,
     },
     RoleCode.SYSTEM_SERVICE: {
         "code": "D2",
         "name": "系统服务",
-        "layer": NO_LAYER,
-        "description": "System Service — non-human principal; internal service identity, access via scoped grants.",
+        "layer": LAYER_APPLICATION,
+        "description": "System Service — non-human principal at application level (P2): scheduling, event bus, index build.",
         "human": False,
     },
     RoleCode.EXTERNAL_INTEGRATION: {
         "code": "D3",
         "name": "外部集成",
-        "layer": NO_LAYER,
-        "description": "External Integration — non-human principal; third-party integration identity, access via scoped grants.",
+        "layer": LAYER_FUNCTION,
+        "description": "External Integration — non-human principal at function level (P4): explicitly authorized API surface only.",
         "human": False,
     },
 }

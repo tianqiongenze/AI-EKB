@@ -114,12 +114,30 @@ def create_app(db_path: str | None = None) -> Litestar:
     def _validation_exception_to_422(request: Request, exc: ValidationException) -> Response:
         return Response(content={"detail": exc.detail}, status_code=HTTP_422_UNPROCESSABLE_ENTITY)
 
+    # GraphQL（Apollo Federation v2 subgraph 模式，对齐 ESP writing-coach）：
+    # 读聚合层挂 /graphql；鉴权复用 REST 同款 bearer 校验（context 注入共享 ctx）。
+    from strawberry.litestar import make_graphql_controller
+
+    from enterprise_ekb.api.graphql_schema import (
+        federation_schema as _federation_schema,
+    )
+
+    def _graphql_context() -> dict:
+        return {"ctx": ctx}
+
+    _graphql_controller = make_graphql_controller(
+        _federation_schema,
+        path="/graphql",
+        context_getter=_graphql_context,
+    )
+
     api = Litestar(
         route_handlers=[
             handler
             for module in ROUTE_MODULES
             for handler in module.routes(ctx)
-        ],
+        ]
+        + [_graphql_controller],
         middleware=[
             HTTPMetricsMiddleware,
             DefineMiddleware(

@@ -217,6 +217,26 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             raise
         return out
 
+
+    class _ReadCursor:
+        """读路径 cursor 上下文：异常时 rollback（防 aborted 事务楔死 CCL），正常由调用方 _read_commit。"""
+
+        def __init__(self, store: CockroachDBControlPlaneStore) -> None:
+            self._store = store
+
+        def __enter__(self) -> Any:
+            self._cur = self._store._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            return self._cur
+
+        def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+            with contextlib.suppress(Exception):
+                self._cur.close()
+            if exc_type is not None:
+                self._store._rollback()
+
+    def _read_cursor(self) -> CockroachDBControlPlaneStore._ReadCursor:
+        return CockroachDBControlPlaneStore._ReadCursor(self)
+
     # ------------------------------------------------------------------
     # migrations (PG dialect)
     # ------------------------------------------------------------------
@@ -680,7 +700,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
 
     def list_skills(self) -> list[SkillRow]:
         sql = "SELECT * FROM skills ORDER BY skill_name, version"
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(sql)
             rows = cur.fetchall()
         self._read_commit()
@@ -745,6 +765,25 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # ------------------------------------------------------------------
 
     def append_audit(
+        self,
+        tenant_id: str,
+        region_id: str,
+        plant_id: str,
+        user_or_agent_id: str,
+        skill_name: str,
+        skill_version: str,
+        tool_name: str,
+        decision_reason: str,
+        accepted: bool,
+        payload: dict[str, Any],
+    ) -> None:
+        self._append_audit_inner(
+            tenant_id, region_id, plant_id, user_or_agent_id, skill_name,
+            skill_version, tool_name, decision_reason, accepted, payload,
+        )
+
+    @_write_op
+    def _append_audit_inner(
         self,
         tenant_id: str,
         region_id: str,
@@ -877,7 +916,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._commit()
 
     def outbox_stats(self) -> dict[str, int]:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute("SELECT status, COUNT(*) AS count FROM outbox_events GROUP BY status")
             rows = cur.fetchall()
         self._read_commit()
@@ -905,7 +944,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # ------------------------------------------------------------------
 
     def get_sub_agent_task(self, task_id: str) -> SubAgentTaskRecord | None:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(
                 "SELECT * FROM sub_agent_tasks WHERE task_id = %s",
                 (task_id,),
@@ -915,7 +954,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         return self._sub_agent_row_to_record(row) if row else None
 
     def get_sub_agent_task_by_idempotency(self, tenant_id: str, idempotency_key: str) -> SubAgentTaskRecord | None:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(
                 "SELECT * FROM sub_agent_tasks WHERE tenant_id=%s AND idempotency_key=%s AND status='queued' ORDER BY id DESC LIMIT 1",
                 (tenant_id, idempotency_key),
@@ -924,31 +963,39 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._read_commit()
         return self._sub_agent_row_to_record(row) if row else None
 
+    @_write_op
     def create_sub_agent_task(
         self,
         task_id: str,
         idempotency_key: str,
         tenant_id: str,
         region_id: str,
-        plant_id: str,
+        plant_id: str | None,
         supervisor_id: str,
         sub_agent_type: str,
         task_objective: str,
-        status: SubAgentTaskStatus,
-    ) -> None:
+    ) -> SubAgentTaskRecord:
+        """签名与 SQLite 版对齐（status 固定 queued 首态）；补 NOT NULL 的 result_payload_json。"""
         with self._cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO sub_agent_tasks (task_id, idempotency_key, tenant_id, region_id, plant_id,
-                    supervisor_id, sub_agent_type, task_objective, status)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    supervisor_id, sub_agent_type, task_objective, status,
+                    attempt_count, result_payload_json)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
-                (task_id, idempotency_key, tenant_id, region_id, plant_id, supervisor_id, sub_agent_type, task_objective, status.value),
+                (task_id, idempotency_key, tenant_id, region_id, plant_id, supervisor_id,
+                 sub_agent_type, task_objective, SubAgentTaskStatus.queued.value, 0,
+                 json.dumps({}, ensure_ascii=False)),
             )
         self._commit()
+        created = self.get_sub_agent_task(task_id=task_id)
+        if created is None:
+            raise RuntimeError("failed to create sub agent task")
+        return created
 
     def list_sub_agent_tasks_by_supervisor(self, supervisor_id: str, limit: int) -> list[SubAgentTaskRecord]:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(
                 "SELECT * FROM sub_agent_tasks WHERE supervisor_id=%s ORDER BY id DESC LIMIT %s",
                 (supervisor_id, limit),
@@ -957,6 +1004,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._read_commit()
         return [r for r in (self._sub_agent_row_to_record(row) for row in rows) if r is not None]
 
+    @_write_op
     def update_sub_agent_task_status(
         self,
         task_id: str,
@@ -1066,7 +1114,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY domain, capability_type, title LIMIT %s"
         params.append(limit)
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
         self._read_commit()
@@ -1091,15 +1139,27 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
     # ------------------------------------------------------------------
 
     @_write_op
-    def persist_connector_envelope(self, envelope: ConnectorEnvelope) -> tuple[int, bool]:
+    def persist_connector_envelope(
+        self, envelope: ConnectorEnvelope, status: ConnectorRunStatus = ConnectorRunStatus.accepted
+    ) -> tuple[int, bool]:
         with self._cursor() as cur:
+            # CRDB 的 xmax 系统列恒 0（与 PG 不同），不能作为 inserted 判定（审查 P0-4）。
+            # 改为显式先查后插：存在→幂等复用；不存在→插入。唯一约束兜底并发竞态。
+            cur.execute(
+                "SELECT id, status FROM connector_envelopes WHERE connector_system=%s AND idempotency_key=%s",
+                (envelope.connector_system.value, envelope.idempotency_key),
+            )
+            existing = cur.fetchone()
+            if existing is not None:
+                self._commit()
+                return int(existing["id"]), False
             cur.execute(
                 """
                 INSERT INTO connector_envelopes (connector_system, direction, tenant_id, region_id,
                     source_id, event_type, occurred_at, idempotency_key, payload_json, metadata_json, status)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'accepted')
                 ON CONFLICT (connector_system, idempotency_key) DO UPDATE SET updated_at=now()
-                RETURNING id, (xmax = 0) AS inserted
+                RETURNING id
                 """,
                 (
                     envelope.connector_system.value,
@@ -1116,7 +1176,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             )
             row = cur.fetchone()
         self._commit()
-        return int(row["id"]), bool(row["inserted"])
+        return int(row["id"]), True
 
     @_write_op
     def update_connector_status(self, row_id: int, status: ConnectorRunStatus) -> None:
@@ -1146,7 +1206,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             sql += " WHERE " + " AND ".join(clauses)
         sql += " ORDER BY id DESC LIMIT %s"
         params.append(limit)
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
         self._read_commit()
@@ -1198,7 +1258,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
             sql += " WHERE connector_system = %s"
             params = (connector_system.value,)
         sql += " ORDER BY profile_name"
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
         self._read_commit()
@@ -1221,7 +1281,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         return profiles
 
     def get_connector_checkpoint(self, connector_system: ConnectorSystem, profile_name: str) -> dict[str, Any] | None:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(
                 "SELECT * FROM connector_checkpoints WHERE connector_system=%s AND profile_name=%s",
                 (connector_system.value, profile_name),
@@ -1283,7 +1343,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
         self._commit()
 
     def list_connector_pull_runs(self, connector_system: ConnectorSystem, profile_name: str, limit: int = 20) -> list[dict[str, Any]]:
-        with self._cursor() as cur:
+        with self._read_cursor() as cur:
             cur.execute(
                 "SELECT * FROM connector_pull_runs WHERE connector_system=%s AND profile_name=%s ORDER BY id DESC LIMIT %s",
                 (connector_system.value, profile_name, limit),
