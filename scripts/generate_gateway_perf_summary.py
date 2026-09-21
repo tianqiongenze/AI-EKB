@@ -4,7 +4,6 @@ import json
 import time
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 LOAD_SUMMARY_PATH = ROOT / "perf" / "reports" / "load-latest-summary.json"
 GATEWAY_SUMMARY_PATH = ROOT / "perf" / "reports" / "gateway-latest-summary.json"

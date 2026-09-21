@@ -3,8 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-from typing import Iterable
-
+from collections.abc import Iterable
 
 NS = "ekb-control-plane"
 

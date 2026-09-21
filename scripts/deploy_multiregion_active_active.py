@@ -11,7 +11,6 @@ from typing import Any
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL_PLANE_IMAGE = "yadea-ekb:0.2.0"
 GO_GATEWAY_IMAGE = "yadea-ekb-go-gateway:0.2.0"

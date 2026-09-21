@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 GLOBAL_TRAFFIC_DIR = ROOT / "infra" / "k8s" / "production-pack" / "global-traffic"
 REGION_A_VALUES = (

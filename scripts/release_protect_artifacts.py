@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "dist" / "protected"
 BASELINE_PATH = OUTPUT_DIR / "manifest.verify.baseline.json"

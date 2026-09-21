@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 APP_FILE = ROOT / "src" / "enterprise_ekb" / "app.py"
 API_PACKAGE_DIR = ROOT / "src" / "enterprise_ekb" / "api"

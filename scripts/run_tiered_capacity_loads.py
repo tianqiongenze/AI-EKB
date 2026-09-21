@@ -7,7 +7,6 @@ import sys
 import time
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 TIERS_FILE = ROOT / "perf" / "tiered" / "tiers.yaml"
 K6_SCRIPT = ROOT / "perf" / "k6" / "tiered-gateway-load.js"

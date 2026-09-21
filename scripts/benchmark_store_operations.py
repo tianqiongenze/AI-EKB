@@ -7,7 +7,6 @@ import statistics
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from enterprise_ekb.config import load_config
 

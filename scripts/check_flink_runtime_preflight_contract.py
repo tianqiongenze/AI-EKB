@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ENTRYPOINT = ROOT / "services" / "flink-session-image" / "preflight" / "entrypoint-with-preflight.sh"
 PREFLIGHT = ROOT / "services" / "flink-session-image" / "preflight" / "check_flink_runtime_deps.py"
