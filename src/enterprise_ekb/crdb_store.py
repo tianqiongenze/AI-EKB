@@ -511,7 +511,7 @@ class CockroachDBControlPlaneStore(SQLiteControlPlaneStore):
                     int(doc.get("page_count", 0) or 0),
                     int(doc.get("chunk_count", 0) or 0),
                     str(doc.get("error", "") or ""),
-                    _ensure_json(doc.get("metadata", {})),
+                    json.dumps(doc.get("metadata", {}), ensure_ascii=False),
                 ),
             )
         self._commit()

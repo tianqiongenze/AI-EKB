@@ -42,10 +42,14 @@ def routes(ctx: ControlPlaneContext) -> list:
         cached = _SEMANTIC_CACHE.get(cache_system_key, cache_user_key)
         if cached is not None:
             answer, layer = cached
+            try:
+                answer_data = json.loads(answer) if isinstance(answer, str) else answer
+            except (TypeError, ValueError):
+                answer_data = answer
             return {
                 "accepted": True,
                 "reason": "semantic_cache_hit",
-                "data": answer,
+                "data": answer_data,
                 "cache_hit": True,
                 "cache_layer": layer,
             }
@@ -81,7 +85,11 @@ def routes(ctx: ControlPlaneContext) -> list:
         if not response.accepted:
             raise HTTPException(status_code=403, detail=response.decision_reason)
         # 未命中→回填缓存（仅接受的成功响应）
-        _SEMANTIC_CACHE.put(cache_system_key, cache_user_key, response.data)
+        _SEMANTIC_CACHE.put(
+            cache_system_key,
+            cache_user_key,
+            response.data if isinstance(response.data, str) else json.dumps(response.data, ensure_ascii=False, sort_keys=True, default=str),
+        )
         return {
             "accepted": response.accepted,
             "reason": response.decision_reason,
