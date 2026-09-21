@@ -26,7 +26,6 @@ from datetime import datetime, timezone
 
 
 def _get(base: str, path: str, timeout: float = 15.0) -> tuple[int, bytes]:
-    t0 = time.perf_counter()
     try:
         with urllib.request.urlopen(base + path, timeout=timeout) as r:
             return r.status, r.read()

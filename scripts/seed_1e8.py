@@ -194,8 +194,6 @@ def generate(table: str, conn) -> None:
                 done = (batch_i + 1) * BATCH
                 print(f"[connector_envelopes] {done}/{TOTAL['connector_envelopes']} rows, {done / max(time.time() - t0, 0.1):.0f} rows/s", flush=True)
     elif table == "outbox_events":
-        cur.execute("SELECT coalesce(max(id),0) FROM outbox_events")
-        existing = cur.fetchone()[0]
         cols = "event_type, payload_json, status, retries, last_error, created_at, published_at"
         base_ts = datetime.now(timezone.utc)
         t0 = time.time()
@@ -288,7 +286,8 @@ def generate_audits_shard(shard: int, shards: int) -> None:
         if (batch_i // shards) % 20 == 0:
             rate = done / max(time.time() - t0, 0.1)
             print(f"[audits-shard{shard}/{shards}] {done}/{total_batches * BATCH} rows, {rate:.0f} rows/s", flush=True)
-    cur.close(); conn.close()
+    cur.close()
+    conn.close()
 
 
 if __name__ == "__main__":
