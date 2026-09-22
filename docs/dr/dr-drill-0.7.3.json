@@ -1,0 +1,11 @@
+{
+  "killed_pod": "ekb-control-plane-6b6f68fcfd-4jcqk",
+  "rto_pod_seconds": 10.9,
+  "max_audits_before": 27601291,
+  "max_audits_after": 27601291,
+  "rpo": "PASS (max id non-decreasing)",
+  "probe_total": 9997,
+  "probe_ok": 9997,
+  "probe_errors": 0,
+  "availability_during_drill": 1.0
+}
