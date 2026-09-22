@@ -28,12 +28,8 @@ def client(tmp_path):
 # 深度/别名/token 限制
 # ---------------------------------------------------------------------------
 def test_depth_limit_rejects_deep_query(client):
-    # 深度 12 > max_depth 10 → 拒绝
-    deep = "{ documents(limit: 1) { docId } " + "a{b}" * 0  # placeholder
-    # 构造真深度查询：rbacRoles 无嵌套字段，用 fragment-free 链式不适用——
-    # 直接用 schema 内唯一可嵌套结构（无），所以构造一个 11 层内省式查询验证校验器激活
-    query = "{ documents(limit: 1) { docId } }"
-    # 深度攻击构造：alias 重复 15 次（MaxAliases=10 拦截）
+    # 深度攻击构造：alias 重复 15 次（MaxAliases=10 拦截）；当前 schema 无嵌套类型，
+    # 深度限制由 QueryDepthLimiter 在扩展链上兜底（同为 strawberry 校验期拦截）
     aliased = "{" + " ".join(f"d{i}: documents(limit: 1) {{ docId }}" for i in range(15)) + "}"
     resp = client.post("/graphql", json={"query": aliased})
     body = resp.json()
