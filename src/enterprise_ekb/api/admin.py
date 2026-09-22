@@ -42,6 +42,9 @@ def routes(ctx: ControlPlaneContext) -> list:
     @post("/admin/rbac/users", status_code=200, sync_to_thread=True)
     def assign_user_role(data: UserRoleBinding, request: Request) -> dict[str, str]:
         ctx._require_admin_auth(request)
+        actor = ctx._extract_user_id(request)
+        if actor is not None:
+            ctx._require_rbac_layer(actor, "P2")  # 用户绑定=应用级操作（渗透 P3c 修复）
         try:
             service.assign_role(
                 user_id=data.user_id,
