@@ -171,11 +171,11 @@ def x1_recover() -> None:
 # 用 service 端点摘除法：临时把 redis-cluster service selector 指向不存在的标签 → 连接全部失败
 # ---------------------------------------------------------------------------
 def x2_inject() -> str:
-    orig = k("get", "svc", "redis-cluster", "-n", "infra", "-o", "json")
+    orig = k("get", "svc", "redis", "-n", "infra", "-o", "json")
     spec = json.loads(orig.decode())
     selector = spec["spec"].get("selector", {})
     # 破坏 selector
-    subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis-cluster",
+    subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis",
                      "--type", "merge", "-p", '{"spec":{"selector":{"__chaos__":"isolated"}}}'],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return json.dumps(selector)
@@ -185,13 +185,13 @@ def x2_recover(orig_selector_json: str = "") -> None:
     if orig_selector_json:
         sel = json.loads(orig_selector_json)
         patch = json.dumps({"spec": {"selector": sel}})
-        subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis-cluster",
+        subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis",
                          "--type", "merge", "-p", patch],
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
         # 兜底：查 endpooints 对应 pod 标签恢复
-        subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis-cluster",
-                         "--type", "merge", "-p", '{"spec":{"selector":{"app":"redis-cluster"}}}'],
+        subprocess.call(["kubectl", "-n", "infra", "patch", "svc", "redis",
+                         "--type", "merge", "-p", '{"spec":{"selector":{"app":"redis"}}}'],
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 

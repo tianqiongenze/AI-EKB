@@ -1,0 +1,17 @@
+{
+  "experiment": "X5 crdb-single-node-down",
+  "hypothesis": "3-node Raft quorum retains (2/3 alive); writes/reads continue; RPO=0",
+  "blast_radius": "HIGH - single-node pilot with stop condition",
+  "node_down": "cockroachdb-c-0 (k8s-worker1)",
+  "inject_seconds": 45,
+  "probes": 870,
+  "availability": 1.0,
+  "p50_ms": 1.8,
+  "p95_ms": 2.3,
+  "errors": 0,
+  "max_audits_before": 27601291,
+  "max_audits_after": 27601291,
+  "rpo": "PASS",
+  "hypothesis_verdict": "PASS",
+  "total_wall_s": 52.8
+}

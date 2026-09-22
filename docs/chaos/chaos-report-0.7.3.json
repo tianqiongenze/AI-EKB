@@ -1,0 +1,150 @@
+{
+  "generated_at": "2026-09-22T08:40:54.394566+00:00",
+  "methodology": "Principles of Chaos (steady-state hypothesis, blast radius, stop conditions); X2 re-run after service-name fix (UIM: invalid injection detected & retried)",
+  "results": [
+    {
+      "experiment": "X1 pod-kill",
+      "hypothesis": "3 副本下 kill 单副本，可用率 ≥99%、RTO<30s、RPO=0",
+      "blast_radius": "低（副本冗余内，DR 演练已验证）",
+      "started_at": "2026-09-22T08:36:52.036304+00:00",
+      "inject_seconds": 30,
+      "steady_state_before": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.9,
+        "p95_ms": 2.3,
+        "max_ms": 5.0
+      },
+      "max_audits_before": 27601291,
+      "aborted_by_stop_condition": false,
+      "inject_ok": true,
+      "recovered_at_s": 33.2,
+      "steady_state_during": {
+        "probes": 772,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.2,
+        "max_ms": 8.5
+      },
+      "steady_state_after": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.2,
+        "max_ms": 3.8
+      },
+      "max_audits_after": 27601291,
+      "rpo": "PASS",
+      "hypothesis_verdict": "PASS",
+      "finished_at": "2026-09-22T08:37:42.629926+00:00"
+    },
+    {
+      "experiment": "X2 redis-failure",
+      "hypothesis": "Redis 不可达时限流/缓存降级不崩，主链路可用率 ≥90%",
+      "blast_radius": "低（L2 缓存/L1 pool 自愈路径）",
+      "started_at": "2026-09-22T08:53:02.567256+00:00",
+      "inject_seconds": 45,
+      "steady_state_before": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.8,
+        "p95_ms": 2.3,
+        "max_ms": 5.6
+      },
+      "max_audits_before": 27601291,
+      "aborted_by_stop_condition": false,
+      "inject_ok": true,
+      "recovered_at_s": 48.3,
+      "steady_state_during": {
+        "probes": 1061,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.1,
+        "max_ms": 7.0
+      },
+      "steady_state_after": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.2,
+        "max_ms": 4.3
+      },
+      "max_audits_after": 27601291,
+      "rpo": "PASS",
+      "hypothesis_verdict": "PASS",
+      "finished_at": "2026-09-22T08:54:08.128252+00:00"
+    },
+    {
+      "experiment": "X3 pulsar-failure",
+      "hypothesis": "broker 不可达时 outbox 积压不丢，恢复后 relay 追平",
+      "blast_radius": "低（outbox 落库，relay 重试）",
+      "started_at": "2026-09-22T08:38:48.174016+00:00",
+      "inject_seconds": 45,
+      "steady_state_before": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.8,
+        "p95_ms": 2.2,
+        "max_ms": 5.4
+      },
+      "max_audits_before": 27601291,
+      "aborted_by_stop_condition": false,
+      "inject_ok": true,
+      "recovered_at_s": 48.3,
+      "steady_state_during": {
+        "probes": 1062,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.1,
+        "max_ms": 5.2
+      },
+      "steady_state_after": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.8,
+        "p95_ms": 2.2,
+        "max_ms": 2.4
+      },
+      "max_audits_after": 27601291,
+      "rpo": "PASS",
+      "hypothesis_verdict": "PASS",
+      "finished_at": "2026-09-22T08:39:53.789481+00:00"
+    },
+    {
+      "experiment": "X4 cpu-stress",
+      "hypothesis": "CPU limit 饱和下探针不误杀（timeout 5s 验证）、降级不崩",
+      "blast_radius": "低（单 pod 试点）",
+      "started_at": "2026-09-22T08:39:53.789719+00:00",
+      "inject_seconds": 40,
+      "steady_state_before": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.8,
+        "p95_ms": 2.2,
+        "max_ms": 2.3
+      },
+      "max_audits_before": 27601291,
+      "aborted_by_stop_condition": false,
+      "inject_ok": true,
+      "recovered_at_s": 43.3,
+      "steady_state_during": {
+        "probes": 964,
+        "availability": 1.0,
+        "p50_ms": 1.7,
+        "p95_ms": 2.2,
+        "max_ms": 8.8
+      },
+      "steady_state_after": {
+        "probes": 97,
+        "availability": 1.0,
+        "p50_ms": 1.8,
+        "p95_ms": 2.3,
+        "max_ms": 2.3
+      },
+      "max_audits_after": 27601291,
+      "rpo": "PASS",
+      "hypothesis_verdict": "PASS",
+      "finished_at": "2026-09-22T08:40:54.394266+00:00"
+    }
+  ]
+}

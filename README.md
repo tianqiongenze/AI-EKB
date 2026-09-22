@@ -6,13 +6,13 @@
 
 | 维度 | 数字 | 说明 |
 |---|---|---|
-| 测试 | **205 Python + 34 前端 + 11 Java + 渗透 9 向量 + DR 演练** | 全栈测试矩阵（0.7.1 实测 `pytest tests/ -q` 195 passed，vitest 34 passed） |
+| 测试 | **205 Python + 34 前端 + 11 Java + 渗透 9 向量 + DR 演练 + 混沌 5 实验** | 全栈测试矩阵（0.7.1 实测 `pytest tests/ -q` 195 passed，vitest 34 passed） |
 | 工程门禁 | **4 道** | 契约一致性 / Flink preflight / replay SLO / gateway SLO |
 | API 路由 | **53 REST + /graphql 聚合 / 16 上下文模块** | `api/` 包限界上下文组织，契约 1:1 对齐；0.6.1 新增文档/RBAC/图谱/看板/语义缓存 5 上下文 |
 | 事件契约 | **21 类** | Pulsar topic 契约化管理；0.6.1 新增 document.ingested/deleted、graph.rebuilt、rbac.user.assigned |
 | 可观测 | `/metrics` Prometheus | HTTP 时延 summary + Outbox 状态 gauge |
 | 风控 | 签名防重放 + JWT + 分布式限流 | `EKB_REQUEST_SIGNING_SECRET` / `EKB_JWT_HS256_SECRET` / `EKB_RATE_LIMIT_BACKEND` |
-| 架构评审 | **9.4 / 10** | 0.7.3：GraphQL 加固（深度/别名/APQ）+ 灾切演练 RTO 10.9s/RPO 0/可用性 100% + 渗透测试 9/9（含真漏洞修复闭环）+ 2707 万行真实数据；见 `docs/test-report-0.7.3-evidence-2026-09-22.md` |
+| 架构评审 | **9.5 / 10** | 0.8.0-pre：混沌工程 5 实验（pod-kill/Redis/Pulsar/CPU 饱和/CRDB 单节点）全 PASS + 渗透 9/9 + DR RTO 10.9s；见 `docs/chaos/chaos-report-0.8.0-pre-2026-09-22.md` |
 | 并发目标 | 100万+ 连接 | 当前为高吞吐就绪基线，达标路径见评审 §4 P0 |
 | 部署资产 | 5 形态 + CDC | K8s / Helm / Kustomize / Compose / 裸机一键 + Debezium CDC |
 | 前端多端 | admin M2 + mobile M2 骨架 + 车间大屏 + E2E/CI | `web/admin`（i18n 双语/暗色/大屏页签，gzip 57.31KB；新增文档管理/知识检索/图谱探索/工业看板 4 页）+ `web/mobile`（uni-app，鸿蒙路线） |
