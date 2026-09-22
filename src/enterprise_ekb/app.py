@@ -10,11 +10,13 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from litestar import Litestar, Request, Response
 from litestar.exceptions import ValidationException
 from litestar.middleware.base import DefineMiddleware
+from litestar.openapi import OpenAPIConfig
 from litestar.status_codes import HTTP_422_UNPROCESSABLE_ENTITY
 
 from enterprise_ekb.api import (
@@ -116,19 +118,26 @@ def create_app(db_path: str | None = None) -> Litestar:
 
     # GraphQL（Apollo Federation v2 subgraph 模式，对齐 ESP writing-coach）：
     # 读聚合层挂 /graphql；鉴权复用 REST 同款 bearer 校验（context 注入共享 ctx）。
+    # 0.7.2 加固：生产关闭内省+IDE（加固清单④）； persisted query 存储自实现（strawberry
+    # 0.327 无内置 APQ——ASV 实测），hash→query 注册表由客户端首查注册。
     from strawberry.litestar import make_graphql_controller
 
+    from enterprise_ekb.api.graphql_apq import APQMiddleware, APQStorage
     from enterprise_ekb.api.graphql_schema import (
         federation_schema as _federation_schema,
     )
 
+    _apq_store = APQStorage(max_entries=2048, ttl_seconds=3600)
+    _prod_graphql = os.getenv("EKB_ENV", "").lower() == "production"
+
     def _graphql_context() -> dict:
-        return {"ctx": ctx}
+        return {"ctx": ctx, "apq": _apq_store}
 
     _graphql_controller = make_graphql_controller(
         _federation_schema,
         path="/graphql",
         context_getter=_graphql_context,
+        graphql_ide=None if _prod_graphql else "graphiql",
     )
 
     api = Litestar(
@@ -139,6 +148,10 @@ def create_app(db_path: str | None = None) -> Litestar:
         ]
         + [_graphql_controller],
         middleware=[
+            DefineMiddleware(
+                APQMiddleware,
+                apq_store=_apq_store,
+            ),
             HTTPMetricsMiddleware,
             DefineMiddleware(
                 AntiReplayMiddleware,
@@ -147,7 +160,11 @@ def create_app(db_path: str | None = None) -> Litestar:
                 nonce_store=ctx.nonce_store,
             ),
         ],
-        openapi_config=None,
+        openapi_config=OpenAPIConfig(
+            title="EKB Control Plane",
+            version="0.7.2",
+            use_handler_docstrings=False,
+        ) if not _prod_graphql else None,
         lifespan=[_outbox_relay_lifespan],
         exception_handlers={ValidationException: _validation_exception_to_422},
     )

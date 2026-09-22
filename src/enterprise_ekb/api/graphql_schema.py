@@ -17,6 +17,7 @@ make_graphql_controller(schema, path="/graphql") 返回 Litestar controller（�
 from __future__ import annotations
 
 import strawberry
+from strawberry.extensions import MaxAliasesLimiter, MaxTokensLimiter, QueryDepthLimiter
 from strawberry.types import Info
 
 
@@ -240,4 +241,14 @@ class Mutation:
             return 0
 
 
-federation_schema = strawberry.federation.Schema(query=Query, mutation=Mutation)
+# 生产加固四件套（联网核实 GraphQL 加固清单：深度限制/复杂度近似=alias+token 限额/内省关闭）。
+# DisableIntrospection 生产启用：EKB_ENV=production 时关内省（环境变量切换在 app.py 挂载处）。
+federation_schema = strawberry.federation.Schema(
+    query=Query,
+    mutation=Mutation,
+    extensions=[
+        QueryDepthLimiter(max_depth=10),      # 加固清单①：深度 ≤10
+        MaxAliasesLimiter(max_alias_count=10),  # 加固清单⑧：防别名放大
+        MaxTokensLimiter(max_token_count=2000),  # 复杂度近似上限
+    ],
+)
