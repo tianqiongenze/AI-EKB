@@ -7,6 +7,7 @@ name = "yadea-ekb"
 version = "0.1.0"
 description = "Yadea Technology Group industrial AI knowledge base platform with MCP, Agent Skills, and Harness"
 readme = "README.md"
+license = { text = "Documentation: CC BY-NC-SA 4.0; Code: PolyForm Noncommercial 1.0.0. Commercial use requires written permission. Copyright (c) 2026 Gong Yuwei <javanetgognzheng@aliyun.com>" }
 requires-python = ">=3.10"
 dependencies = [
   "litestar>=2.16,<3",
