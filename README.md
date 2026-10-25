@@ -421,7 +421,7 @@ P0 待办（详见评审报告 §4）：异步化热路径、Redis 分布式限�
 
 ### 8.1 已补齐的公开发布基础文件
 
-- `LICENSE`（Apache-2.0）
+- `LICENSE`（文档 CC BY-NC-SA 4.0 ＋ 代码 PolyForm Noncommercial 1.0.0；企业项目，商业使用需书面授权）
 - `SECURITY.md`
 - `SUPPORT.md`
 - `CODEOWNERS`
