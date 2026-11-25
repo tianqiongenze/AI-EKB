@@ -1,8 +1,8 @@
-# Yadea EKB Platform Product Guide
+# a leading EV manufacturer EKB Platform Product Guide
 
 ## 1. 产品定位
 
-Yadea EKB 是雅迪科技集团工业级 AI 知识库平台，用于连接研发、制造、质量、供应链、售后等业务场景，实现多区域、多工厂、多系统协同的知识治理和智能协作。
+a leading EV manufacturer EKB 是某头部电动车制造集团科技集团工业级 AI 知识库平台，用于连接研发、制造、质量、供应链、售后等业务场景，实现多区域、多工厂、多系统协同的知识治理和智能协作。
 
 ## 2. 核心能力
 

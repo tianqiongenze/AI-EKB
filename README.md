@@ -1,4 +1,4 @@
-# Yadea Technology Group AI Knowledge Base Platform (EKB)
+# a leading EV manufacturing group AI Knowledge Base Platform (EKB)
 
 > 技术栈（2026-09）：**Litestar 2.24（全异步 ASGI）+ Granian（Rust HTTP 服务器）+ Pydantic v2 + CockroachDB/Pulsar/Redis/Neo4j/Milvus + K8s/Helm/Kustomize + Go/Java 多语言服务**
 
@@ -99,11 +99,11 @@ Milvus 相似度]
 - `docs/sources/ai-knowledge-management-4r-v5-architecture.zh-CN.md`
 - 需求调研输入：`docs/sources/yadea-ai-kb-requirements-research-report.zh-CN.pdf`
 
-目标：支撑雅迪科技集团（全国多分公司 + 全球多生产基地）企业级垂类 AI 知识库，面向 **100万+ 并发访问** 的可上线工程基线。
+目标：支撑某头部电动车制造集团科技集团（全国多分公司 + 全球多生产基地）企业级垂类 AI 知识库，面向 **100万+ 并发访问** 的可上线工程基线。
 
 ## 1. 项目交付内容
 
-- 雅迪科技集团企业级上线蓝图（架构、治理、SRE、DR、合规）
+- 某头部电动车制造集团科技集团企业级上线蓝图（架构、治理、SRE、DR、合规）
 - MCP 控制面与网关基线服务（Litestar + Granian 全异步栈）
 - Agent Skills 注册与治理能力
 - Harness（质量/安全/回归）评测框架
@@ -290,7 +290,7 @@ K8S 模式会先部署依赖中间件（Pulsar/CockroachDB/Redis/Neo4j/Milvus）
 - `POST /domain/capabilities/upsert`：业务域能力登记/更新
 - `POST /domain/capabilities/search`：业务域能力检索
 - `GET /domain/capabilities/coverage`：业务域能力覆盖率审计
-- `POST /domain/capabilities/bootstrap`：按雅迪需求基线初始化能力项
+- `POST /domain/capabilities/bootstrap`：按某头部电动车制造集团需求基线初始化能力项
 - `POST /connectors/ingest`：ERP/MES/SCADA/工单连接器统一事件接入
 - `POST /connectors/replay`：连接器事件回放（支持按系统过滤）
 - `POST /connectors/profiles/upsert`：连接器联调配置（认证/地址/批次）登记

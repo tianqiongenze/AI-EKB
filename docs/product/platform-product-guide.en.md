@@ -1,8 +1,8 @@
-# Yadea EKB Platform Product Guide (English)
+# a leading EV manufacturer EKB Platform Product Guide (English)
 
 ## 1. Product Overview
 
-Yadea EKB is an industrial-grade AI knowledge platform for enterprise-scale manufacturing organizations, providing governance, collaboration, retrieval, and compliance-ready operations.
+a leading EV manufacturer EKB is an industrial-grade AI knowledge platform for enterprise-scale manufacturing organizations, providing governance, collaboration, retrieval, and compliance-ready operations.
 
 ## 2. Functional Matrix (Detailed)
 

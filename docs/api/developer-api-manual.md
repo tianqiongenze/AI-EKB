@@ -1,8 +1,8 @@
-# Developer API Manual (Yadea EKB)
+# Developer API Manual (a leading EV manufacturer EKB)
 
 ## 1. Overview
 
-This manual describes the control-plane APIs for Yadea EKB, including governance, A2A, graph, and vector operations.
+This manual describes the control-plane APIs for a leading EV manufacturer EKB, including governance, A2A, graph, and vector operations.
 
 Base URL: `http://<host>:8080`
 

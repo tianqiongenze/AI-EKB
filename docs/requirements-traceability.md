@@ -1,11 +1,11 @@
-# 需求追踪矩阵（两份架构文档 + 雅迪需求调研）
+# 需求追踪矩阵（两份架构文档 + 某头部电动车制造集团需求调研）
 
 ## 1. 功能需求映射
 
 | 需求来源 | 需求摘要 | 当前实现/资产 |
 |---|---|---|
-| 雅迪需求PDF | 战略分析看板、风险预警、跨部门协作 | `docs/enterprise-delivery-blueprint.md` + 控制面事件审计链路 |
-| 雅迪需求PDF | 研发流程标准化、版本控制、设计复用 | `services/java-kgraph` + `contracts/` 契约资产 |
+| 某头部电动车制造集团需求PDF | 战略分析看板、风险预警、跨部门协作 | `docs/enterprise-delivery-blueprint.md` + 控制面事件审计链路 |
+| 某头部电动车制造集团需求PDF | 研发流程标准化、版本控制、设计复用 | `services/java-kgraph` + `contracts/` 契约资产 |
 | 架构文档1 | 三层架构（中心/区域/边缘） | `docs/global-deployment-and-dr.md` + `infra/kustomize` |
 | 架构文档1 | TiDB + Pulsar + 多语言服务边界 | `src/enterprise_ekb/tidb_store.py`、`event_bus.py`、`services/*` |
 | 架构文档2 | MCP与Agent生态治理 | `docs/mcp-agent-skills-harness-governance.md` |

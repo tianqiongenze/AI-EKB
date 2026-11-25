@@ -1,6 +1,6 @@
 # Documentation Style Guide
 
-This guide defines the canonical documentation taxonomy, file naming conventions, and placement rules for the Yadea EKB repository. It is authoritative for all new docs and reorganizations.
+This guide defines the canonical documentation taxonomy, file naming conventions, and placement rules for the a leading EV manufacturer EKB repository. It is authoritative for all new docs and reorganizations.
 
 ## 1. Canonical Taxonomy
 

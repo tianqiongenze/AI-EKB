@@ -1,4 +1,4 @@
-# A2A Architecture (Yadea EKB)
+# A2A Architecture (a leading EV manufacturer EKB)
 
 ## 1. Purpose
 

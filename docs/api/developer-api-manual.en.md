@@ -2,7 +2,7 @@
 
 ## 1. Platform Overview
 
-Yadea EKB control plane provides skill governance, MCP invocation governance, A2A messaging, graph/vector operations, and auditable event-driven workflows.
+a leading EV manufacturer EKB control plane provides skill governance, MCP invocation governance, A2A messaging, graph/vector operations, and auditable event-driven workflows.
 
 ## 2. Python Modules and Runtime Functions (Complete)
 

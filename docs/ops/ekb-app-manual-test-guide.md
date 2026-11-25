@@ -74,7 +74,7 @@ curl -s http://10.167.2.175:30881/api/healthz            # 期望 {"status":"ok"
 
 | # | 步骤 | 期望 | 实测 |
 |---|---|---|---|
-| F-1 | 首页加载 | 顶部出现「雅迪 EKB 管理台」+ 状态点（ready/事件后端/Outbox 待发数） | |
+| F-1 | 首页加载 | 顶部出现「某头部电动车制造集团 EKB 管理台」+ 状态点（ready/事件后端/Outbox 待发数） | |
 | F-2 | Outbox 状态卡片 | 显示 pending/processing/published/dead 四计数（JSON） | |
 | F-3 | /metrics 卡片 | 出现 `ekb_*` 指标文本 | |
 | F-4 | 点击「🌙 暗色」 | 全页切换暗色主题（令牌翻转，无样式错乱） | |

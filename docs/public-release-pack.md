@@ -22,7 +22,7 @@ flowchart LR
 | 多语言服务 | Java/Python/Go | 已落地 |
 | 契约治理 | OpenAPI + Proto + CI | 已落地 |
 
-## 三、需求映射图（雅迪调研 + 架构文档）
+## 三、需求映射图（某头部电动车制造集团调研 + 架构文档）
 
 ```mermaid
 mindmap

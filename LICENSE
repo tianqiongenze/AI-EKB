@@ -1,7 +1,7 @@
 # 许可协议 · License
 
-版权所有 © 2026 宫宇伟 <javanetgognzheng@aliyun.com>
-Copyright © 2026 Gong Yuwei <javanetgognzheng@aliyun.com>
+版权所有 © 2026 宫宇伟 <javanetgongzheng@aliyun.com>
+Copyright © 2026 Gong Yuwei <javanetgongzheng@aliyun.com>
 
 本仓库包含两类内容，分别适用不同许可，请按内容类型对号：
 
@@ -11,7 +11,8 @@ Copyright © 2026 Gong Yuwei <javanetgognzheng@aliyun.com>
 | **代码与脚本** | .py / .js / .java / .go / .rs / .sql / .yaml / .json 及可执行脚本 | **PolyForm Noncommercial 1.0.0**（非商业软件许可） |
 
 两类许可的共同底线：**允许非商业的教学、教研、学习、修改与分发；禁止商业使用。**
-商业授权（含对外收费培训、出版、SaaS、商业 AI 训练）：javanetgognzheng@aliyun.com
+商业授权（含对外收费培训、出版、SaaS、商业 AI 训练）：javanetgongzheng@aliyun.com
+  国际 International：javanetgongzheng@gmail.com
 办学使用（学历教育、校本化改编、课堂演示）：文档署名即可；代码可在非商业教学场景自由修改与分发。
 
 以下依次为两份许可的正式文本。
@@ -542,7 +543,7 @@ PolyForm Noncommercial License 1.0.0
 ## 商业授权 · Commercial Licensing
 
 以上两类内容的商业使用，均须事先取得著作权人书面授权。
-联系方式：javanetgognzheng@aliyun.com
+联系方式：javanetgongzheng@aliyun.com
 ================================================================================
 
 ================================================================================
@@ -552,12 +553,12 @@ PolyForm Noncommercial License 1.0.0
 本仓库承载**企业知识与工程内容**（含雅迪科技集团相关业务语义、架构与治理资产），属企业项目，不按开源项目对待。
 
 1. **著作权归属**：以与委托方／合作方签订的合同约定为准；在无另行约定的情况下，
-   代码与文档著作权归仓库持有者 **宫宇伟 <javanetgognzheng@aliyun.com>** 所有。
+   代码与文档著作权归仓库持有者 **宫宇伟 <javanetgongzheng@aliyun.com>** 所有。
 2. **委托方／客户**：在其合同授权范围内使用；不得超出授权范围分发、转授权或商业利用。
 3. **第三方开源组件**：仍适用其各自的原始许可（MIT / Apache-2.0 / BSD 等），
    本许可不改变、不削弱其条款；使用方须同时遵守。
 4. **保密**：本仓库含企业业务语义与架构信息，未经书面许可不得对外披露、演示或用于投标材料。
 5. **商用**：任何商业使用（含对外服务、SaaS、培训、商业 AI 训练）须事先取得书面授权。
 
-授权咨询：javanetgognzheng@aliyun.com
+授权咨询：javanetgongzheng@aliyun.com
 ================================================================================

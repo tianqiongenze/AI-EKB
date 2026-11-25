@@ -29,7 +29,7 @@ flowchart TB
 ```
 
 1. **Monorepo**：pnpm workspace + Turborepo 任务编排；tokens/组件库/工具库/app 同仓，语义化版本 + Changesets。
-2. **设计系统**：`design-tokens`（W3C DTCG JSON）为唯一视觉源，脚本生成 Web CSS Variables 与 UTS 主题——保证多端品牌一致性；雅迪品牌色/暗色模式/无障碍对比度 ≥ 4.5:1 进 tokens。
+2. **设计系统**：`design-tokens`（W3C DTCG JSON）为唯一视觉源，脚本生成 Web CSS Variables 与 UTS 主题——保证多端品牌一致性；某头部电动车制造集团品牌色/暗色模式/无障碍对比度 ≥ 4.5:1 进 tokens。
 3. **微前端**（管理台第二阶段）：治理台按限界上下文拆 qiankun/Module Federation 子应用（skill 域、审计域、容量域），多团队并行不阻塞。
 4. **BFF 层**：管理台聚合查询走 Go 网关新增 `/bff/*`（或 P2 只读 GraphQL，见评审报告 §12），避免前端直连 36 个 REST 端点造成 round-trip 放大。
 5. **CI/CD**：pnpm lint(type-check+eslint) → vitest 单测 → Playwright e2e → Lighthouse CI 性能门禁 → 分环境发布（dev/staging/prod 与后端环境对齐）。
